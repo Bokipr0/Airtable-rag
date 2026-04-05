@@ -1,0 +1,2571 @@
+{
+  "metadata": {
+    "source": "https://www.odour.org.uk/odour/",
+    "extraction_date": "2026-04-04",
+    "total_odours": 640,
+    "extraction_method": "manual",
+    "description": "LRI & Odour Database - Complete odour-to-molecule mapping"
+  },
+  "odours": [
+    {
+      "name": "a little dihydrogensulfide",
+      "molecules": []
+    },
+    {
+      "name": "acetic",
+      "molecules": []
+    },
+    {
+      "name": "acetone",
+      "molecules": []
+    },
+    {
+      "name": "acetylenic",
+      "molecules": []
+    },
+    {
+      "name": "acidic",
+      "molecules": []
+    },
+    {
+      "name": "acidy",
+      "molecules": []
+    },
+    {
+      "name": "alcoholic",
+      "molecules": []
+    },
+    {
+      "name": "aldehyde",
+      "molecules": []
+    },
+    {
+      "name": "allium",
+      "molecules": []
+    },
+    {
+      "name": "almond",
+      "molecules": []
+    },
+    {
+      "name": "almost herbaceous",
+      "molecules": []
+    },
+    {
+      "name": "amine",
+      "molecules": []
+    },
+    {
+      "name": "ammonia",
+      "molecules": []
+    },
+    {
+      "name": "anaesthetic",
+      "molecules": []
+    },
+    {
+      "name": "animal",
+      "molecules": []
+    },
+    {
+      "name": "aniseed",
+      "molecules": []
+    },
+    {
+      "name": "anthranilic",
+      "molecules": []
+    },
+    {
+      "name": "antiseptic",
+      "molecules": []
+    },
+    {
+      "name": "apple",
+      "molecules": []
+    },
+    {
+      "name": "apple skin",
+      "molecules": []
+    },
+    {
+      "name": "apricot",
+      "molecules": []
+    },
+    {
+      "name": "arctic bramble",
+      "molecules": []
+    },
+    {
+      "name": "aromatic",
+      "molecules": []
+    },
+    {
+      "name": "artificial flavored candy",
+      "molecules": []
+    },
+    {
+      "name": "artificial raspberry",
+      "molecules": []
+    },
+    {
+      "name": "asparagus",
+      "molecules": []
+    },
+    {
+      "name": "astringent",
+      "molecules": []
+    },
+    {
+      "name": "baked",
+      "molecules": []
+    },
+    {
+      "name": "baked potato",
+      "molecules": []
+    },
+    {
+      "name": "balsamic",
+      "molecules": []
+    },
+    {
+      "name": "banana",
+      "molecules": []
+    },
+    {
+      "name": "banana tissue",
+      "molecules": []
+    },
+    {
+      "name": "bast",
+      "molecules": []
+    },
+    {
+      "name": "beany",
+      "molecules": []
+    },
+    {
+      "name": "beef broth",
+      "molecules": []
+    },
+    {
+      "name": "bell peper",
+      "molecules": []
+    },
+    {
+      "name": "bell pepper",
+      "molecules": []
+    },
+    {
+      "name": "biscuit",
+      "molecules": []
+    },
+    {
+      "name": "bitter",
+      "molecules": []
+    },
+    {
+      "name": "bitter almond",
+      "molecules": []
+    },
+    {
+      "name": "blackcurrant",
+      "molecules": []
+    },
+    {
+      "name": "blood orange",
+      "molecules": []
+    },
+    {
+      "name": "blue cheese",
+      "molecules": []
+    },
+    {
+      "name": "boiled beef",
+      "molecules": []
+    },
+    {
+      "name": "boiled cabbage",
+      "molecules": []
+    },
+    {
+      "name": "boiled egg",
+      "molecules": []
+    },
+    {
+      "name": "boiled meat",
+      "molecules": []
+    },
+    {
+      "name": "boiled milk",
+      "molecules": []
+    },
+    {
+      "name": "boiled potato",
+      "molecules": []
+    },
+    {
+      "name": "boiled poultry",
+      "molecules": []
+    },
+    {
+      "name": "booled apple",
+      "molecules": []
+    },
+    {
+      "name": "boxer aroma",
+      "molecules": []
+    },
+    {
+      "name": "braised vegetables",
+      "molecules": []
+    },
+    {
+      "name": "brandy",
+      "molecules": []
+    },
+    {
+      "name": "bread",
+      "molecules": []
+    },
+    {
+      "name": "breadcrust",
+      "molecules": []
+    },
+    {
+      "name": "bready green",
+      "molecules": []
+    },
+    {
+      "name": "bright",
+      "molecules": []
+    },
+    {
+      "name": "brown sugar",
+      "molecules": []
+    },
+    {
+      "name": "browny",
+      "molecules": []
+    },
+    {
+      "name": "buccu",
+      "molecules": []
+    },
+    {
+      "name": "buccu leaf and black currant",
+      "molecules": []
+    },
+    {
+      "name": "burdock",
+      "molecules": []
+    },
+    {
+      "name": "burdock brownish",
+      "molecules": []
+    },
+    {
+      "name": "burnt",
+      "molecules": []
+    },
+    {
+      "name": "burnt butter",
+      "molecules": []
+    },
+    {
+      "name": "burnt coffee",
+      "molecules": []
+    },
+    {
+      "name": "burnt match",
+      "molecules": []
+    },
+    {
+      "name": "burnt meat",
+      "molecules": []
+    },
+    {
+      "name": "burnt milk",
+      "molecules": []
+    },
+    {
+      "name": "burnt pineapple",
+      "molecules": []
+    },
+    {
+      "name": "burnt rubber",
+      "molecules": []
+    },
+    {
+      "name": "burnt sugar",
+      "molecules": []
+    },
+    {
+      "name": "butter",
+      "molecules": []
+    },
+    {
+      "name": "butterscotch",
+      "molecules": []
+    },
+    {
+      "name": "butyric",
+      "molecules": []
+    },
+    {
+      "name": "cabbage",
+      "molecules": []
+    },
+    {
+      "name": "cacao",
+      "molecules": []
+    },
+    {
+      "name": "cacao bean",
+      "molecules": []
+    },
+    {
+      "name": "camphor",
+      "molecules": []
+    },
+    {
+      "name": "camphoraceous",
+      "molecules": []
+    },
+    {
+      "name": "camphoric",
+      "molecules": []
+    },
+    {
+      "name": "caprylic",
+      "molecules": []
+    },
+    {
+      "name": "caramel",
+      "molecules": []
+    },
+    {
+      "name": "caramellic",
+      "molecules": []
+    },
+    {
+      "name": "cardboard",
+      "molecules": []
+    },
+    {
+      "name": "carraway",
+      "molecules": []
+    },
+    {
+      "name": "carrot",
+      "molecules": []
+    },
+    {
+      "name": "cauliflower",
+      "molecules": []
+    },
+    {
+      "name": "cedar",
+      "molecules": []
+    },
+    {
+      "name": "cedar wood",
+      "molecules": []
+    },
+    {
+      "name": "celery",
+      "molecules": []
+    },
+    {
+      "name": "cereal",
+      "molecules": []
+    },
+    {
+      "name": "cereal bready",
+      "molecules": []
+    },
+    {
+      "name": "characteristic",
+      "molecules": []
+    },
+    {
+      "name": "characteristic mercaptan",
+      "molecules": []
+    },
+    {
+      "name": "charred paper",
+      "molecules": []
+    },
+    {
+      "name": "cheese",
+      "molecules": []
+    },
+    {
+      "name": "cheese (camembert)",
+      "molecules": []
+    },
+    {
+      "name": "cheese cracker",
+      "molecules": []
+    },
+    {
+      "name": "chemical",
+      "molecules": []
+    },
+    {
+      "name": "cherry",
+      "molecules": []
+    },
+    {
+      "name": "chicken",
+      "molecules": []
+    },
+    {
+      "name": "chimney soot",
+      "molecules": []
+    },
+    {
+      "name": "chives",
+      "molecules": []
+    },
+    {
+      "name": "chlorine",
+      "molecules": []
+    },
+    {
+      "name": "chockingly repulsive",
+      "molecules": []
+    },
+    {
+      "name": "chocolate",
+      "molecules": []
+    },
+    {
+      "name": "chocolaty sweet",
+      "molecules": []
+    },
+    {
+      "name": "choking",
+      "molecules": []
+    },
+    {
+      "name": "cinnamon",
+      "molecules": []
+    },
+    {
+      "name": "citrus",
+      "molecules": []
+    },
+    {
+      "name": "cloth",
+      "molecules": []
+    },
+    {
+      "name": "clove",
+      "molecules": []
+    },
+    {
+      "name": "coarse",
+      "molecules": []
+    },
+    {
+      "name": "cocoa",
+      "molecules": []
+    },
+    {
+      "name": "coconut",
+      "molecules": []
+    },
+    {
+      "name": "coffee",
+      "molecules": []
+    },
+    {
+      "name": "coffee liquor",
+      "molecules": []
+    },
+    {
+      "name": "comphoraceous",
+      "molecules": []
+    },
+    {
+      "name": "cooked beef",
+      "molecules": []
+    },
+    {
+      "name": "cooked cabbage",
+      "molecules": []
+    },
+    {
+      "name": "cooked carrots",
+      "molecules": []
+    },
+    {
+      "name": "cooked fruit",
+      "molecules": []
+    },
+    {
+      "name": "cooked meat",
+      "molecules": []
+    },
+    {
+      "name": "cooked onion",
+      "molecules": []
+    },
+    {
+      "name": "cooked potato",
+      "molecules": []
+    },
+    {
+      "name": "cooked rice",
+      "molecules": []
+    },
+    {
+      "name": "cooked vegetable",
+      "molecules": []
+    },
+    {
+      "name": "cooked vegetable (corn)",
+      "molecules": []
+    },
+    {
+      "name": "cooked vegetable (onion garlic)",
+      "molecules": []
+    },
+    {
+      "name": "cooked vegetables (sharp resembling nuts)",
+      "molecules": []
+    },
+    {
+      "name": "cookie",
+      "molecules": []
+    },
+    {
+      "name": "cool",
+      "molecules": []
+    },
+    {
+      "name": "corn",
+      "molecules": []
+    },
+    {
+      "name": "corn chip",
+      "molecules": []
+    },
+    {
+      "name": "corn with bitter note",
+      "molecules": []
+    },
+    {
+      "name": "cornnuts",
+      "molecules": []
+    },
+    {
+      "name": "coumarin",
+      "molecules": []
+    },
+    {
+      "name": "cowy",
+      "molecules": []
+    },
+    {
+      "name": "cracker",
+      "molecules": []
+    },
+    {
+      "name": "cream",
+      "molecules": []
+    },
+    {
+      "name": "crisp bacon",
+      "molecules": []
+    },
+    {
+      "name": "crust",
+      "molecules": []
+    },
+    {
+      "name": "cucumber",
+      "molecules": []
+    },
+    {
+      "name": "cucumber peel",
+      "molecules": []
+    },
+    {
+      "name": "cumarin",
+      "molecules": []
+    },
+    {
+      "name": "curry",
+      "molecules": []
+    },
+    {
+      "name": "dark chocolate",
+      "molecules": []
+    },
+    {
+      "name": "dark malt",
+      "molecules": []
+    },
+    {
+      "name": "deep fried",
+      "molecules": []
+    },
+    {
+      "name": "deep fried fat",
+      "molecules": []
+    },
+    {
+      "name": "diacetyl",
+      "molecules": []
+    },
+    {
+      "name": "diamine",
+      "molecules": []
+    },
+    {
+      "name": "diffuse",
+      "molecules": []
+    },
+    {
+      "name": "diffusive",
+      "molecules": []
+    },
+    {
+      "name": "diffusive penetrating sweet",
+      "molecules": []
+    },
+    {
+      "name": "diluted floral",
+      "molecules": []
+    },
+    {
+      "name": "dirty",
+      "molecules": []
+    },
+    {
+      "name": "dirty cloth",
+      "molecules": []
+    },
+    {
+      "name": "dirty socks",
+      "molecules": []
+    },
+    {
+      "name": "disagreable",
+      "molecules": []
+    },
+    {
+      "name": "dry",
+      "molecules": []
+    },
+    {
+      "name": "dry green",
+      "molecules": []
+    },
+    {
+      "name": "dull",
+      "molecules": []
+    },
+    {
+      "name": "dusty",
+      "molecules": []
+    },
+    {
+      "name": "earhty green",
+      "molecules": []
+    },
+    {
+      "name": "earthy",
+      "molecules": []
+    },
+    {
+      "name": "earthy (fungal) with butter green leaf note",
+      "molecules": []
+    },
+    {
+      "name": "earthy green",
+      "molecules": []
+    },
+    {
+      "name": "egg",
+      "molecules": []
+    },
+    {
+      "name": "eggy",
+      "molecules": []
+    },
+    {
+      "name": "elderberry",
+      "molecules": []
+    },
+    {
+      "name": "ester",
+      "molecules": []
+    },
+    {
+      "name": "estery apple",
+      "molecules": []
+    },
+    {
+      "name": "estragole",
+      "molecules": []
+    },
+    {
+      "name": "etc.",
+      "molecules": []
+    },
+    {
+      "name": "ether",
+      "molecules": []
+    },
+    {
+      "name": "ether with corn note",
+      "molecules": []
+    },
+    {
+      "name": "ethereal",
+      "molecules": []
+    },
+    {
+      "name": "ethereal character",
+      "molecules": []
+    },
+    {
+      "name": "ethery",
+      "molecules": []
+    },
+    {
+      "name": "extreme dilution fruity",
+      "molecules": []
+    },
+    {
+      "name": "extremely powerful",
+      "molecules": []
+    },
+    {
+      "name": "extremely powerful and diffusive",
+      "molecules": []
+    },
+    {
+      "name": "fatty",
+      "molecules": []
+    },
+    {
+      "name": "feacal",
+      "molecules": []
+    },
+    {
+      "name": "feacal sulfurous",
+      "molecules": []
+    },
+    {
+      "name": "fermented",
+      "molecules": []
+    },
+    {
+      "name": "fermented beany",
+      "molecules": []
+    },
+    {
+      "name": "fermented earthy",
+      "molecules": []
+    },
+    {
+      "name": "fermented roast",
+      "molecules": []
+    },
+    {
+      "name": "fermented soybeans",
+      "molecules": []
+    },
+    {
+      "name": "fine roasted",
+      "molecules": []
+    },
+    {
+      "name": "firm",
+      "molecules": []
+    },
+    {
+      "name": "fishy",
+      "molecules": []
+    },
+    {
+      "name": "floral",
+      "molecules": []
+    },
+    {
+      "name": "floral fragrant citrus",
+      "molecules": []
+    },
+    {
+      "name": "flowery",
+      "molecules": []
+    },
+    {
+      "name": "foxy",
+      "molecules": []
+    },
+    {
+      "name": "fragrant",
+      "molecules": []
+    },
+    {
+      "name": "fresh",
+      "molecules": []
+    },
+    {
+      "name": "fresh mint",
+      "molecules": []
+    },
+    {
+      "name": "fresh onions",
+      "molecules": []
+    },
+    {
+      "name": "fresh white bread crust",
+      "molecules": []
+    },
+    {
+      "name": "freshly baked bread",
+      "molecules": []
+    },
+    {
+      "name": "freshly baked bread crust",
+      "molecules": []
+    },
+    {
+      "name": "fried fat",
+      "molecules": []
+    },
+    {
+      "name": "fried meat",
+      "molecules": []
+    },
+    {
+      "name": "fried onion",
+      "molecules": []
+    },
+    {
+      "name": "fried potato",
+      "molecules": []
+    },
+    {
+      "name": "fruit flesh",
+      "molecules": []
+    },
+    {
+      "name": "fruity",
+      "molecules": []
+    },
+    {
+      "name": "fuel gas",
+      "molecules": []
+    },
+    {
+      "name": "fusel oil",
+      "molecules": []
+    },
+    {
+      "name": "galbanum green",
+      "molecules": []
+    },
+    {
+      "name": "garden cress",
+      "molecules": []
+    },
+    {
+      "name": "garlic",
+      "molecules": []
+    },
+    {
+      "name": "garlic character with slight metallic nuance",
+      "molecules": []
+    },
+    {
+      "name": "gasoline",
+      "molecules": []
+    },
+    {
+      "name": "geranic aroma",
+      "molecules": []
+    },
+    {
+      "name": "geranium",
+      "molecules": []
+    },
+    {
+      "name": "geranium leaves",
+      "molecules": []
+    },
+    {
+      "name": "germaline",
+      "molecules": []
+    },
+    {
+      "name": "germaline disinfectant",
+      "molecules": []
+    },
+    {
+      "name": "glue",
+      "molecules": []
+    },
+    {
+      "name": "grain",
+      "molecules": []
+    },
+    {
+      "name": "grape",
+      "molecules": []
+    },
+    {
+      "name": "grass",
+      "molecules": []
+    },
+    {
+      "name": "grassy",
+      "molecules": []
+    },
+    {
+      "name": "grassy alcoholic",
+      "molecules": []
+    },
+    {
+      "name": "greasy",
+      "molecules": []
+    },
+    {
+      "name": "green",
+      "molecules": []
+    },
+    {
+      "name": "green (beel pepper)",
+      "molecules": []
+    },
+    {
+      "name": "green (bell pepper)",
+      "molecules": []
+    },
+    {
+      "name": "green and burnt undertone",
+      "molecules": []
+    },
+    {
+      "name": "green bean",
+      "molecules": []
+    },
+    {
+      "name": "green bell peper",
+      "molecules": []
+    },
+    {
+      "name": "green fruit",
+      "molecules": []
+    },
+    {
+      "name": "green grass",
+      "molecules": []
+    },
+    {
+      "name": "green herbaceous",
+      "molecules": []
+    },
+    {
+      "name": "green herbal",
+      "molecules": []
+    },
+    {
+      "name": "green leaf",
+      "molecules": []
+    },
+    {
+      "name": "green leaves",
+      "molecules": []
+    },
+    {
+      "name": "green malt",
+      "molecules": []
+    },
+    {
+      "name": "green musky note",
+      "molecules": []
+    },
+    {
+      "name": "green nutty",
+      "molecules": []
+    },
+    {
+      "name": "green oily",
+      "molecules": []
+    },
+    {
+      "name": "green peper",
+      "molecules": []
+    },
+    {
+      "name": "green pepper",
+      "molecules": []
+    },
+    {
+      "name": "green phenolic",
+      "molecules": []
+    },
+    {
+      "name": "green potato",
+      "molecules": []
+    },
+    {
+      "name": "green sweet oily",
+      "molecules": []
+    },
+    {
+      "name": "green tomato leaf",
+      "molecules": []
+    },
+    {
+      "name": "green vegetables",
+      "molecules": []
+    },
+    {
+      "name": "green vegetables (haricot beans)",
+      "molecules": []
+    },
+    {
+      "name": "green vegetably character",
+      "molecules": []
+    },
+    {
+      "name": "grilled meat",
+      "molecules": []
+    },
+    {
+      "name": "groundnut",
+      "molecules": []
+    },
+    {
+      "name": "harsh",
+      "molecules": []
+    },
+    {
+      "name": "has the sharpness of leek odour",
+      "molecules": []
+    },
+    {
+      "name": "hay",
+      "molecules": []
+    },
+    {
+      "name": "hazelnut",
+      "molecules": []
+    },
+    {
+      "name": "heated meat",
+      "molecules": []
+    },
+    {
+      "name": "heated onion",
+      "molecules": []
+    },
+    {
+      "name": "heated rubber",
+      "molecules": []
+    },
+    {
+      "name": "heavy",
+      "molecules": []
+    },
+    {
+      "name": "heavy cider",
+      "molecules": []
+    },
+    {
+      "name": "herbaceous",
+      "molecules": []
+    },
+    {
+      "name": "herbal",
+      "molecules": []
+    },
+    {
+      "name": "higher concentration mushroom",
+      "molecules": []
+    },
+    {
+      "name": "honey",
+      "molecules": []
+    },
+    {
+      "name": "horse manure",
+      "molecules": []
+    },
+    {
+      "name": "hot (spicy)",
+      "molecules": []
+    },
+    {
+      "name": "hot ironing",
+      "molecules": []
+    },
+    {
+      "name": "hyacinth",
+      "molecules": []
+    },
+    {
+      "name": "hydrogen sulfide (in beer)",
+      "molecules": []
+    },
+    {
+      "name": "immense tenacity",
+      "molecules": []
+    },
+    {
+      "name": "imparts a parline and woody note to coffee",
+      "molecules": []
+    },
+    {
+      "name": "imparts characteristic fatty and smoky odor to meat aroma",
+      "molecules": []
+    },
+    {
+      "name": "in high dilution pleasant roasted and smoky note",
+      "molecules": []
+    },
+    {
+      "name": "in syryp: creamy",
+      "molecules": []
+    },
+    {
+      "name": "intense caramel",
+      "molecules": []
+    },
+    {
+      "name": "intense leek or onion",
+      "molecules": []
+    },
+    {
+      "name": "intense sweet",
+      "molecules": []
+    },
+    {
+      "name": "intensively onion",
+      "molecules": []
+    },
+    {
+      "name": "iodoform",
+      "molecules": []
+    },
+    {
+      "name": "irritating",
+      "molecules": []
+    },
+    {
+      "name": "isovaleric",
+      "molecules": []
+    },
+    {
+      "name": "jam",
+      "molecules": []
+    },
+    {
+      "name": "Japanese pepper tree",
+      "molecules": []
+    },
+    {
+      "name": "juice",
+      "molecules": []
+    },
+    {
+      "name": "ketone",
+      "molecules": []
+    },
+    {
+      "name": "lactone",
+      "molecules": []
+    },
+    {
+      "name": "lactonic acid",
+      "molecules": []
+    },
+    {
+      "name": "leather",
+      "molecules": []
+    },
+    {
+      "name": "leaves",
+      "molecules": []
+    },
+    {
+      "name": "leek",
+      "molecules": []
+    },
+    {
+      "name": "lemony",
+      "molecules": []
+    },
+    {
+      "name": "less onion",
+      "molecules": []
+    },
+    {
+      "name": "licorice",
+      "molecules": []
+    },
+    {
+      "name": "lightstruck",
+      "molecules": []
+    },
+    {
+      "name": "lime",
+      "molecules": []
+    },
+    {
+      "name": "lime blossom",
+      "molecules": []
+    },
+    {
+      "name": "linseed oil",
+      "molecules": []
+    },
+    {
+      "name": "liver",
+      "molecules": []
+    },
+    {
+      "name": "low bell pepper",
+      "molecules": []
+    },
+    {
+      "name": "lower aldehyde",
+      "molecules": []
+    },
+    {
+      "name": "macadamia",
+      "molecules": []
+    },
+    {
+      "name": "Maggi",
+      "molecules": []
+    },
+    {
+      "name": "malt",
+      "molecules": []
+    },
+    {
+      "name": "mango",
+      "molecules": []
+    },
+    {
+      "name": "maple",
+      "molecules": []
+    },
+    {
+      "name": "maple syrup",
+      "molecules": []
+    },
+    {
+      "name": "marmelo",
+      "molecules": []
+    },
+    {
+      "name": "mealic",
+      "molecules": []
+    },
+    {
+      "name": "meat",
+      "molecules": []
+    },
+    {
+      "name": "medicinal",
+      "molecules": []
+    },
+    {
+      "name": "melon",
+      "molecules": []
+    },
+    {
+      "name": "melon rind",
+      "molecules": []
+    },
+    {
+      "name": "melting plastic",
+      "molecules": []
+    },
+    {
+      "name": "menthol",
+      "molecules": []
+    },
+    {
+      "name": "mercaptan",
+      "molecules": []
+    },
+    {
+      "name": "metallic",
+      "molecules": []
+    },
+    {
+      "name": "metallic with cooked beef or braised and vegetable nuances",
+      "molecules": []
+    },
+    {
+      "name": "methional",
+      "molecules": []
+    },
+    {
+      "name": "methylcinnamate",
+      "molecules": []
+    },
+    {
+      "name": "mild",
+      "molecules": []
+    },
+    {
+      "name": "mild fruity",
+      "molecules": []
+    },
+    {
+      "name": "mild smoky",
+      "molecules": []
+    },
+    {
+      "name": "mild sweet",
+      "molecules": []
+    },
+    {
+      "name": "mint",
+      "molecules": []
+    },
+    {
+      "name": "minty camphoraceous in character with slight bell pepper undertone",
+      "molecules": []
+    },
+    {
+      "name": "mocha",
+      "molecules": []
+    },
+    {
+      "name": "molasses",
+      "molecules": []
+    },
+    {
+      "name": "more sulfide",
+      "molecules": []
+    },
+    {
+      "name": "mothball",
+      "molecules": []
+    },
+    {
+      "name": "mould",
+      "molecules": []
+    },
+    {
+      "name": "mouldy",
+      "molecules": []
+    },
+    {
+      "name": "mousy",
+      "molecules": []
+    },
+    {
+      "name": "mushroom",
+      "molecules": []
+    },
+    {
+      "name": "mushroom and soup",
+      "molecules": []
+    },
+    {
+      "name": "mushroom aroma",
+      "molecules": []
+    },
+    {
+      "name": "mustard",
+      "molecules": []
+    },
+    {
+      "name": "musty",
+      "molecules": []
+    },
+    {
+      "name": "musty fecal",
+      "molecules": []
+    },
+    {
+      "name": "naphtha",
+      "molecules": []
+    },
+    {
+      "name": "naphthalene",
+      "molecules": []
+    },
+    {
+      "name": "nasty",
+      "molecules": []
+    },
+    {
+      "name": "nauseating",
+      "molecules": []
+    },
+    {
+      "name": "new leather",
+      "molecules": []
+    },
+    {
+      "name": "noncharacteristic",
+      "molecules": []
+    },
+    {
+      "name": "none",
+      "molecules": []
+    },
+    {
+      "name": "nonlachrymatory",
+      "molecules": []
+    },
+    {
+      "name": "not roasted",
+      "molecules": []
+    },
+    {
+      "name": "not sulfury",
+      "molecules": []
+    },
+    {
+      "name": "not truly reminiscent of garlic",
+      "molecules": []
+    },
+    {
+      "name": "nutty",
+      "molecules": []
+    },
+    {
+      "name": "oatmeal",
+      "molecules": []
+    },
+    {
+      "name": "obnoxiuos",
+      "molecules": []
+    },
+    {
+      "name": "odourless",
+      "molecules": []
+    },
+    {
+      "name": "of garlic/onion type",
+      "molecules": []
+    },
+    {
+      "name": "oily",
+      "molecules": []
+    },
+    {
+      "name": "oily buttery",
+      "molecules": []
+    },
+    {
+      "name": "oily green",
+      "molecules": []
+    },
+    {
+      "name": "oily of onion character",
+      "molecules": []
+    },
+    {
+      "name": "old hop",
+      "molecules": []
+    },
+    {
+      "name": "old socks",
+      "molecules": []
+    },
+    {
+      "name": "onion",
+      "molecules": []
+    },
+    {
+      "name": "onion (heated)",
+      "molecules": []
+    },
+    {
+      "name": "onion and garlic roasted or boiled",
+      "molecules": []
+    },
+    {
+      "name": "onion character with metallic notes",
+      "molecules": []
+    },
+    {
+      "name": "onion or garlic character",
+      "molecules": []
+    },
+    {
+      "name": "onion with slight metallic background notes",
+      "molecules": []
+    },
+    {
+      "name": "orange",
+      "molecules": []
+    },
+    {
+      "name": "orange peel",
+      "molecules": []
+    },
+    {
+      "name": "oxidized",
+      "molecules": []
+    },
+    {
+      "name": "ozonous green",
+      "molecules": []
+    },
+    {
+      "name": "painful",
+      "molecules": []
+    },
+    {
+      "name": "paint",
+      "molecules": []
+    },
+    {
+      "name": "paint thinner",
+      "molecules": []
+    },
+    {
+      "name": "pale",
+      "molecules": []
+    },
+    {
+      "name": "papaya",
+      "molecules": []
+    },
+    {
+      "name": "paper",
+      "molecules": []
+    },
+    {
+      "name": "paraffinic",
+      "molecules": []
+    },
+    {
+      "name": "parmesan cheese",
+      "molecules": []
+    },
+    {
+      "name": "peach",
+      "molecules": []
+    },
+    {
+      "name": "peanut",
+      "molecules": []
+    },
+    {
+      "name": "pear",
+      "molecules": []
+    },
+    {
+      "name": "peardrops",
+      "molecules": []
+    },
+    {
+      "name": "peely",
+      "molecules": []
+    },
+    {
+      "name": "penetrating",
+      "molecules": []
+    },
+    {
+      "name": "penetrating amine",
+      "molecules": []
+    },
+    {
+      "name": "penetrating and diffusive",
+      "molecules": []
+    },
+    {
+      "name": "penetrating and repulsive",
+      "molecules": []
+    },
+    {
+      "name": "penetrating garlic",
+      "molecules": []
+    },
+    {
+      "name": "penetrating pungent",
+      "molecules": []
+    },
+    {
+      "name": "pepper",
+      "molecules": []
+    },
+    {
+      "name": "perfumy",
+      "molecules": []
+    },
+    {
+      "name": "perilla",
+      "molecules": []
+    },
+    {
+      "name": "pesticide",
+      "molecules": []
+    },
+    {
+      "name": "phenolic",
+      "molecules": []
+    },
+    {
+      "name": "pickled",
+      "molecules": []
+    },
+    {
+      "name": "pineapple",
+      "molecules": []
+    },
+    {
+      "name": "planty",
+      "molecules": []
+    },
+    {
+      "name": "planty green",
+      "molecules": []
+    },
+    {
+      "name": "plastic glue",
+      "molecules": []
+    },
+    {
+      "name": "pleasant",
+      "molecules": []
+    },
+    {
+      "name": "pleasant earthy",
+      "molecules": []
+    },
+    {
+      "name": "pleasant smell like cooked asparagus",
+      "molecules": []
+    },
+    {
+      "name": "popcorn",
+      "molecules": []
+    },
+    {
+      "name": "pork rind",
+      "molecules": []
+    },
+    {
+      "name": "potato",
+      "molecules": []
+    },
+    {
+      "name": "powdery musk",
+      "molecules": []
+    },
+    {
+      "name": "powerful",
+      "molecules": []
+    },
+    {
+      "name": "powerful and diffusive onion",
+      "molecules": []
+    },
+    {
+      "name": "powerful coffee",
+      "molecules": []
+    },
+    {
+      "name": "powerful penetrating sulfaceous herbaceous of onion",
+      "molecules": []
+    },
+    {
+      "name": "practically odourless",
+      "molecules": []
+    },
+    {
+      "name": "preserved tang boiled in soy sauce",
+      "molecules": []
+    },
+    {
+      "name": "prickling",
+      "molecules": []
+    },
+    {
+      "name": "pungent",
+      "molecules": []
+    },
+    {
+      "name": "pungent character undiluted",
+      "molecules": []
+    },
+    {
+      "name": "putrefaction (of onion egg) (in beer)",
+      "molecules": []
+    },
+    {
+      "name": "putty",
+      "molecules": []
+    },
+    {
+      "name": "pyridin",
+      "molecules": []
+    },
+    {
+      "name": "pyridine",
+      "molecules": []
+    },
+    {
+      "name": "quinonic",
+      "molecules": []
+    },
+    {
+      "name": "radish",
+      "molecules": []
+    },
+    {
+      "name": "radish (ozon)",
+      "molecules": []
+    },
+    {
+      "name": "radish of poor tenacity",
+      "molecules": []
+    },
+    {
+      "name": "rancid",
+      "molecules": []
+    },
+    {
+      "name": "raspberry",
+      "molecules": []
+    },
+    {
+      "name": "raw",
+      "molecules": []
+    },
+    {
+      "name": "raw mushrooms",
+      "molecules": []
+    },
+    {
+      "name": "raw potato",
+      "molecules": []
+    },
+    {
+      "name": "red currant",
+      "molecules": []
+    },
+    {
+      "name": "reminds of fusel oil",
+      "molecules": []
+    },
+    {
+      "name": "reminds of raosted peanuts",
+      "molecules": []
+    },
+    {
+      "name": "reminds of unburnt coffee",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of benzaldehyde",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of bouillon",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of cabbage",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of degrading onions at high conc.",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of hazelnut",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of mushroom",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of peach and apricot",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of saffron",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of sherry",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of shortcake",
+      "molecules": []
+    },
+    {
+      "name": "reminiscent of wild radish",
+      "molecules": []
+    },
+    {
+      "name": "repulsive",
+      "molecules": []
+    },
+    {
+      "name": "resembling that of tomato leaf",
+      "molecules": []
+    },
+    {
+      "name": "resinous",
+      "molecules": []
+    },
+    {
+      "name": "responsible for skunky odour of sunstruck beer",
+      "molecules": []
+    },
+    {
+      "name": "rhubarb",
+      "molecules": []
+    },
+    {
+      "name": "ribes",
+      "molecules": []
+    },
+    {
+      "name": "rice cracker",
+      "molecules": []
+    },
+    {
+      "name": "ripe",
+      "molecules": []
+    },
+    {
+      "name": "ripe banana",
+      "molecules": []
+    },
+    {
+      "name": "roast",
+      "molecules": []
+    },
+    {
+      "name": "roast beef",
+      "molecules": []
+    },
+    {
+      "name": "roast meat",
+      "molecules": []
+    },
+    {
+      "name": "roasted",
+      "molecules": []
+    },
+    {
+      "name": "roasted aroma character",
+      "molecules": []
+    },
+    {
+      "name": "roasted bean",
+      "molecules": []
+    },
+    {
+      "name": "roasted beef",
+      "molecules": []
+    },
+    {
+      "name": "roasted bread crust",
+      "molecules": []
+    },
+    {
+      "name": "roasted character",
+      "molecules": []
+    },
+    {
+      "name": "roasted chicory root",
+      "molecules": []
+    },
+    {
+      "name": "roasted coffee",
+      "molecules": []
+    },
+    {
+      "name": "roasted filberts",
+      "molecules": []
+    },
+    {
+      "name": "roasted hazelnuts",
+      "molecules": []
+    },
+    {
+      "name": "roasted meat",
+      "molecules": []
+    },
+    {
+      "name": "roasted nut",
+      "molecules": []
+    },
+    {
+      "name": "roasted nuts",
+      "molecules": []
+    },
+    {
+      "name": "roasted or boiled",
+      "molecules": []
+    },
+    {
+      "name": "roasted peanut",
+      "molecules": []
+    },
+    {
+      "name": "roasted peanuts",
+      "molecules": []
+    },
+    {
+      "name": "roasted pungent",
+      "molecules": []
+    },
+    {
+      "name": "roasted rye bread",
+      "molecules": []
+    },
+    {
+      "name": "roasted soybean",
+      "molecules": []
+    },
+    {
+      "name": "root",
+      "molecules": []
+    },
+    {
+      "name": "rose",
+      "molecules": []
+    },
+    {
+      "name": "rotten cabbage",
+      "molecules": []
+    },
+    {
+      "name": "rotten eggs",
+      "molecules": []
+    },
+    {
+      "name": "rotten onion",
+      "molecules": []
+    },
+    {
+      "name": "rubber",
+      "molecules": []
+    },
+    {
+      "name": "rum",
+      "molecules": []
+    },
+    {
+      "name": "sagebrush",
+      "molecules": []
+    },
+    {
+      "name": "sausage",
+      "molecules": []
+    },
+    {
+      "name": "savory",
+      "molecules": []
+    },
+    {
+      "name": "seaweed",
+      "molecules": []
+    },
+    {
+      "name": "sharp",
+      "molecules": []
+    },
+    {
+      "name": "shiitake",
+      "molecules": []
+    },
+    {
+      "name": "shunky",
+      "molecules": []
+    },
+    {
+      "name": "sickly",
+      "molecules": []
+    },
+    {
+      "name": "sickly sweet",
+      "molecules": []
+    },
+    {
+      "name": "similar to bell pepper but with some minty notes",
+      "molecules": []
+    },
+    {
+      "name": "similar to pyridine",
+      "molecules": []
+    },
+    {
+      "name": "similar to trimethylpyrazine",
+      "molecules": []
+    },
+    {
+      "name": "skunky",
+      "molecules": []
+    },
+    {
+      "name": "slightly bell pepper",
+      "molecules": []
+    },
+    {
+      "name": "slightly caramellic",
+      "molecules": []
+    },
+    {
+      "name": "slightly cinnamon",
+      "molecules": []
+    },
+    {
+      "name": "slightly earthy",
+      "molecules": []
+    },
+    {
+      "name": "slightly fragment",
+      "molecules": []
+    },
+    {
+      "name": "slightly fruity",
+      "molecules": []
+    },
+    {
+      "name": "slightly green",
+      "molecules": []
+    },
+    {
+      "name": "slightly malty",
+      "molecules": []
+    },
+    {
+      "name": "slightly meaty",
+      "molecules": []
+    },
+    {
+      "name": "slightly methyl cinnamate",
+      "molecules": []
+    },
+    {
+      "name": "slightly minty sweet",
+      "molecules": []
+    },
+    {
+      "name": "slightly nutty",
+      "molecules": []
+    },
+    {
+      "name": "slightly papery",
+      "molecules": []
+    },
+    {
+      "name": "slightly pungent",
+      "molecules": []
+    },
+    {
+      "name": "slightly rancid",
+      "molecules": []
+    },
+    {
+      "name": "slightly rose",
+      "molecules": []
+    },
+    {
+      "name": "slightly seaweed",
+      "molecules": []
+    },
+    {
+      "name": "slightly skunky and green peppery",
+      "molecules": []
+    },
+    {
+      "name": "slightly sweet",
+      "molecules": []
+    },
+    {
+      "name": "slightly toasted",
+      "molecules": []
+    },
+    {
+      "name": "slimy",
+      "molecules": []
+    },
+    {
+      "name": "smoked",
+      "molecules": []
+    },
+    {
+      "name": "smoked meat",
+      "molecules": []
+    },
+    {
+      "name": "smoky",
+      "molecules": []
+    },
+    {
+      "name": "smooth",
+      "molecules": []
+    },
+    {
+      "name": "soapy",
+      "molecules": []
+    },
+    {
+      "name": "soft",
+      "molecules": []
+    },
+    {
+      "name": "solvent",
+      "molecules": []
+    },
+    {
+      "name": "somewhat amber",
+      "molecules": []
+    },
+    {
+      "name": "somewhat camphoraceous",
+      "molecules": []
+    },
+    {
+      "name": "somewhat citrus",
+      "molecules": []
+    },
+    {
+      "name": "somewhat rose",
+      "molecules": []
+    },
+    {
+      "name": "somewhat sour and citrus",
+      "molecules": []
+    },
+    {
+      "name": "somewhat spicy",
+      "molecules": []
+    },
+    {
+      "name": "somewhat violet",
+      "molecules": []
+    },
+    {
+      "name": "soup",
+      "molecules": []
+    },
+    {
+      "name": "sour",
+      "molecules": []
+    },
+    {
+      "name": "sour greenhouse",
+      "molecules": []
+    },
+    {
+      "name": "sour milk",
+      "molecules": []
+    },
+    {
+      "name": "spicy",
+      "molecules": []
+    },
+    {
+      "name": "spicy meat",
+      "molecules": []
+    },
+    {
+      "name": "stale",
+      "molecules": []
+    },
+    {
+      "name": "steak",
+      "molecules": []
+    },
+    {
+      "name": "stinging",
+      "molecules": []
+    },
+    {
+      "name": "stinkbug",
+      "molecules": []
+    },
+    {
+      "name": "strong",
+      "molecules": []
+    },
+    {
+      "name": "strong almond aroma",
+      "molecules": []
+    },
+    {
+      "name": "strong cacao",
+      "molecules": []
+    },
+    {
+      "name": "strong caramel",
+      "molecules": []
+    },
+    {
+      "name": "strong chocolate character",
+      "molecules": []
+    },
+    {
+      "name": "strong galbanum",
+      "molecules": []
+    },
+    {
+      "name": "strong green",
+      "molecules": []
+    },
+    {
+      "name": "strong green bell pepper",
+      "molecules": []
+    },
+    {
+      "name": "strong odour of freshly baked bread",
+      "molecules": []
+    },
+    {
+      "name": "strongly green",
+      "molecules": []
+    },
+    {
+      "name": "strongly green (green bean)",
+      "molecules": []
+    },
+    {
+      "name": "strongly roasted meat",
+      "molecules": []
+    },
+    {
+      "name": "styrene",
+      "molecules": []
+    },
+    {
+      "name": "succulent",
+      "molecules": []
+    },
+    {
+      "name": "sulfurous",
+      "molecules": []
+    },
+    {
+      "name": "sweaty",
+      "molecules": []
+    },
+    {
+      "name": "sweaty dirty socks",
+      "molecules": []
+    },
+    {
+      "name": "sweet",
+      "molecules": []
+    },
+    {
+      "name": "sweet burning",
+      "molecules": []
+    },
+    {
+      "name": "sweet fruity",
+      "molecules": []
+    },
+    {
+      "name": "sweet fruity ketone",
+      "molecules": []
+    },
+    {
+      "name": "sweet odour of gardenia flowers",
+      "molecules": []
+    },
+    {
+      "name": "sweet soup",
+      "molecules": []
+    },
+    {
+      "name": "taco",
+      "molecules": []
+    },
+    {
+      "name": "tallow",
+      "molecules": []
+    },
+    {
+      "name": "tar",
+      "molecules": []
+    },
+    {
+      "name": "tarry",
+      "molecules": []
+    },
+    {
+      "name": "terpene",
+      "molecules": []
+    },
+    {
+      "name": "thiamin",
+      "molecules": []
+    },
+    {
+      "name": "toasted",
+      "molecules": []
+    },
+    {
+      "name": "tobacco",
+      "molecules": []
+    },
+    {
+      "name": "tobacco fragrance",
+      "molecules": []
+    },
+    {
+      "name": "tobbaco almost narcotic pungence",
+      "molecules": []
+    },
+    {
+      "name": "tomato",
+      "molecules": []
+    },
+    {
+      "name": "tropical fruit",
+      "molecules": []
+    },
+    {
+      "name": "type",
+      "molecules": []
+    },
+    {
+      "name": "type reminiscent of ammonia and piperidine",
+      "molecules": []
+    },
+    {
+      "name": "typically caramel",
+      "molecules": []
+    },
+    {
+      "name": "unpleasant",
+      "molecules": []
+    },
+    {
+      "name": "unpleasant odour of cat urine",
+      "molecules": []
+    },
+    {
+      "name": "unripe",
+      "molecules": []
+    },
+    {
+      "name": "unripe banana",
+      "molecules": []
+    },
+    {
+      "name": "unripe fruit",
+      "molecules": []
+    },
+    {
+      "name": "unroasted cocoa",
+      "molecules": []
+    },
+    {
+      "name": "unroasted hazelnuts",
+      "molecules": []
+    },
+    {
+      "name": "vanilla",
+      "molecules": []
+    },
+    {
+      "name": "varnish",
+      "molecules": []
+    },
+    {
+      "name": "vegetable",
+      "molecules": []
+    },
+    {
+      "name": "vegetable character",
+      "molecules": []
+    },
+    {
+      "name": "vegetable green",
+      "molecules": []
+    },
+    {
+      "name": "vegetable oil",
+      "molecules": []
+    },
+    {
+      "name": "vegetable soup (minestrone)",
+      "molecules": []
+    },
+    {
+      "name": "vegetable soup with touch of barley",
+      "molecules": []
+    },
+    {
+      "name": "very diffusive",
+      "molecules": []
+    },
+    {
+      "name": "very interesting grilled note",
+      "molecules": []
+    },
+    {
+      "name": "very mild",
+      "molecules": []
+    },
+    {
+      "name": "very penetrating and powerful",
+      "molecules": []
+    },
+    {
+      "name": "very powerful",
+      "molecules": []
+    },
+    {
+      "name": "very powerful and diffusive",
+      "molecules": []
+    },
+    {
+      "name": "very powerful and penetrating",
+      "molecules": []
+    },
+    {
+      "name": "very reminiscent of fresh carrots",
+      "molecules": []
+    },
+    {
+      "name": "very similar to bell pepper",
+      "molecules": []
+    },
+    {
+      "name": "very strong sulfurated",
+      "molecules": []
+    },
+    {
+      "name": "very sweet",
+      "molecules": []
+    },
+    {
+      "name": "vinegar",
+      "molecules": []
+    },
+    {
+      "name": "vinous",
+      "molecules": []
+    },
+    {
+      "name": "violent",
+      "molecules": []
+    },
+    {
+      "name": "violet",
+      "molecules": []
+    },
+    {
+      "name": "walnut",
+      "molecules": []
+    },
+    {
+      "name": "warm",
+      "molecules": []
+    },
+    {
+      "name": "watermelon",
+      "molecules": []
+    },
+    {
+      "name": "wax",
+      "molecules": []
+    },
+    {
+      "name": "waxy melon",
+      "molecules": []
+    },
+    {
+      "name": "weak",
+      "molecules": []
+    },
+    {
+      "name": "weak amine",
+      "molecules": []
+    },
+    {
+      "name": "weak bell pepper",
+      "molecules": []
+    },
+    {
+      "name": "weak breadcrust",
+      "molecules": []
+    },
+    {
+      "name": "weak herbal green",
+      "molecules": []
+    },
+    {
+      "name": "weak sulfide",
+      "molecules": []
+    },
+    {
+      "name": "weakly green",
+      "molecules": []
+    },
+    {
+      "name": "weakly sweet",
+      "molecules": []
+    },
+    {
+      "name": "whiskey",
+      "molecules": []
+    },
+    {
+      "name": "white bread crust",
+      "molecules": []
+    },
+    {
+      "name": "white floral",
+      "molecules": []
+    },
+    {
+      "name": "wine",
+      "molecules": []
+    },
+    {
+      "name": "winy",
+      "molecules": []
+    },
+    {
+      "name": "with a characteristic garlic undertone",
+      "molecules": []
+    },
+    {
+      "name": "wood",
+      "molecules": []
+    },
+    {
+      "name": "woody",
+      "molecules": []
+    },
+    {
+      "name": "wormwood",
+      "molecules": []
+    },
+    {
+      "name": "worty",
+      "molecules": []
+    },
+    {
+      "name": "yeast",
+      "molecules": []
+    },
+    {
+      "name": "yoghurt",
+      "molecules": []
+    }
+  ]
+}
