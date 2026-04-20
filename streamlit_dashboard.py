@@ -1,6 +1,6 @@
 """
-Flavor Intelligence Dashboard — Live Pipeline Monitor
-=======================================================
+Flavor Intelligence Dashboard — Live Pipeline Monitor v2
+==========================================================
 Run locally:   streamlit run streamlit_dashboard.py
 Deploy:        Streamlit Cloud (connect GitHub repo, set secrets)
 
@@ -26,9 +26,9 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # PAGE CONFIG
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 st.set_page_config(
     page_title="GFI Flavor Intelligence",
@@ -37,18 +37,16 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # SECRETS & CONFIG
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 def get_secret(key, default=""):
     """Read from Streamlit secrets (cloud) or .env (local)."""
-    # Try Streamlit secrets first (cloud deploy)
     try:
         return st.secrets[key]
     except Exception:
         pass
-    # Fall back to .env file
     env_path = Path(__file__).parent / ".env"
     if env_path.exists():
         for line in env_path.read_text().splitlines():
@@ -64,133 +62,223 @@ AT_HEADERS = {"Authorization": f"Bearer {AT_TOKEN}", "Content-Type": "applicatio
 SOURCES_TABLE   = get_secret("SOURCES_TABLE", "Sources")
 MOLECULES_TABLE = get_secret("MOLECULES_TABLE", "Molecules")
 
-# Relevance tiers
-TIER_HIGH = 0.80
-TIER_MID  = 0.60
+# Relevance tiers — 1st / 2nd / 3rd level
+TIER_1ST = 0.80
+TIER_2ND = 0.60
 
 TIER_COLORS = {
-    "🟢 High": "#2ecc71",
-    "🟡 Mid": "#f39c12",
-    "🔴 Low": "#e74c3c",
+    "🥇 1st Level": "#2ecc71",
+    "🥈 2nd Level": "#f39c12",
+    "🥉 3rd Level": "#e74c3c",
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # CUSTOM CSS
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     .block-container { max-width: 1200px; }
     div[data-testid="stSidebar"] { background: #0f1117; }
-    .tier-high { color: #2ecc71; font-weight: 700; font-size: 1.8rem; }
-    .tier-mid  { color: #f39c12; font-weight: 700; font-size: 1.8rem; }
-    .tier-low  { color: #e74c3c; font-weight: 700; font-size: 1.8rem; }
+
+    /* Tier labels */
+    .tier-1st { color: #2ecc71; font-weight: 700; font-size: 1.8rem; }
+    .tier-2nd { color: #f39c12; font-weight: 700; font-size: 1.8rem; }
+    .tier-3rd { color: #e74c3c; font-weight: 700; font-size: 1.8rem; }
+
+    /* Paper cards */
     .paper-card {
         background: #1a1d27; border: 1px solid #2d3350;
         border-radius: 10px; padding: 14px 18px; margin-bottom: 10px;
     }
-    .paper-card.relevant-high { border-left: 4px solid #2ecc71; }
-    .paper-card.relevant-mid  { border-left: 4px solid #f39c12; }
-    .paper-card.relevant-low  { border-left: 4px solid #e74c3c; }
+    .paper-card.relevant-1st { border-left: 4px solid #2ecc71; }
+    .paper-card.relevant-2nd { border-left: 4px solid #f39c12; }
+    .paper-card.relevant-3rd { border-left: 4px solid #e74c3c; }
     .paper-card.dumped        { border-left: 4px solid #555; opacity: 0.6; }
+
+    /* Paper card text — bright defaults */
+    .paper-card strong { color: #f0f2f6; }
+    .paper-card .meta-line { font-size: 0.82rem; color: #c4c8d4; margin-top: 4px; }
+
+    /* Chips */
     .claim-chip {
         display: inline-block; background: rgba(79,142,247,0.12);
         border: 1px solid rgba(79,142,247,0.3); border-radius: 8px;
-        padding: 6px 12px; margin: 3px; font-size: 0.85rem;
+        padding: 6px 12px; margin: 3px; font-size: 0.85rem; color: #a9c4f5;
     }
     .mol-chip {
         display: inline-block; background: rgba(46,204,113,0.12);
         border: 1px solid rgba(46,204,113,0.3); border-radius: 8px;
-        padding: 4px 10px; margin: 2px; font-size: 0.82rem;
+        padding: 4px 10px; margin: 2px; font-size: 0.82rem; color: #7ee8b0;
     }
     .kw-chip {
         display: inline-block; background: rgba(124,92,224,0.12);
         border: 1px solid rgba(124,92,224,0.3); border-radius: 20px;
         padding: 4px 12px; margin: 2px; font-size: 0.8rem; color: #c4b5fd;
     }
+
     .feed-entry { padding: 8px 0; border-bottom: 1px solid #1e2130; }
+
+    /* Score badges */
     .score-badge {
         display: inline-block; padding: 2px 8px; border-radius: 12px;
         font-size: 0.75rem; font-weight: 600;
     }
-    .score-high { background: rgba(46,204,113,0.2); color: #2ecc71; }
-    .score-mid  { background: rgba(243,156,18,0.2); color: #f39c12; }
-    .score-low  { background: rgba(231,76,60,0.2); color: #e74c3c; }
+    .score-1st { background: rgba(46,204,113,0.2); color: #2ecc71; }
+    .score-2nd { background: rgba(243,156,18,0.2); color: #f39c12; }
+    .score-3rd { background: rgba(231,76,60,0.2); color: #e74c3c; }
+
+    /* Session history cards */
+    .session-card {
+        background: #1a1d27; border: 1px solid #2d3350;
+        border-radius: 10px; padding: 14px 18px; margin-bottom: 8px;
+        color: #e0e4f0;
+    }
+    .session-card .session-date { color: #8b92a8; font-size: 0.8rem; }
+    .session-card .session-stat { font-size: 1.2rem; font-weight: 600; color: #f0f2f6; }
+
+    /* Review queue cards */
+    .review-card {
+        background: #1a1d27; border: 1px solid #2d3350;
+        border-radius: 10px; padding: 16px; margin-bottom: 12px;
+    }
+    .review-card strong { color: #f0f2f6; }
+    .review-card .review-meta { color: #c4c8d4; font-size: 0.82rem; }
+
+    /* Molecule category header */
+    .mol-category-header {
+        color: #a9c4f5; font-size: 1rem; font-weight: 600;
+        margin-top: 16px; margin-bottom: 8px;
+        border-bottom: 1px solid #2d3350; padding-bottom: 6px;
+    }
+
+    /* Completion banner */
+    .completion-banner {
+        background: linear-gradient(135deg, #1a3a2a 0%, #1a2d1a 100%);
+        border: 2px solid #2ecc71;
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        margin: 16px 0;
+    }
+    .completion-banner h2 { color: #2ecc71; margin: 0 0 8px 0; }
+    .completion-banner p { color: #c4d4c8; margin: 0; font-size: 1rem; }
+
+    /* Keyword submission */
+    .kw-attributed {
+        display: inline-block; background: rgba(124,92,224,0.12);
+        border: 1px solid rgba(124,92,224,0.3); border-radius: 20px;
+        padding: 4px 12px; margin: 2px; font-size: 0.8rem; color: #c4b5fd;
+    }
+    .kw-attributed .kw-author { font-size: 0.7rem; color: #8b92a8; }
 </style>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # SESSION STATE INIT
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
-if "pipeline_results" not in st.session_state:
-    st.session_state.pipeline_results = []
-if "pipeline_log" not in st.session_state:
-    st.session_state.pipeline_log = []
-if "pipeline_running" not in st.session_state:
-    st.session_state.pipeline_running = False
-if "keywords_used" not in st.session_state:
-    st.session_state.keywords_used = set()
-if "molecules_found" not in st.session_state:
-    st.session_state.molecules_found = {}
-if "claims_extracted" not in st.session_state:
-    st.session_state.claims_extracted = []
-if "papers_processed" not in st.session_state:
-    st.session_state.papers_processed = 0
-if "papers_dumped" not in st.session_state:
-    st.session_state.papers_dumped = 0
+defaults = {
+    "pipeline_results": [],
+    "pipeline_log": [],
+    "pipeline_running": False,
+    "keywords_used": set(),
+    "molecules_found": {},
+    "claims_extracted": [],
+    "papers_processed": 0,
+    "papers_dumped": 0,
+    "session_history": [],         # list of past session summaries
+    "review_queue": [],            # items awaiting Daniel's approval
+    "approved_items": [],          # items Daniel approved
+    "rejected_items": [],          # items Daniel rejected
+    "user_keywords": [],           # keywords submitted by public users
+    "run_complete": False,         # flag for completion popup
+    "user_name": "",               # login gate — visitor name
+    "user_email": "",              # login gate — visitor email
+    "logged_in": False,            # login gate — has user identified
+    "flagged_items": [],           # items flagged for Daniel's attention
+    "run_feedback": [],            # post-run feedback entries
+    "contributor_stats": {},       # {email: {keywords: N, flags: N, runs: N, name: str}}
+}
 
-# ─────────────────────────────────────────────────────────────────────────────
+for key, val in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = val
+
+# ---------------------------------------------------------------------------
+# LOGIN GATE — every visitor must identify before using the dashboard
+# ---------------------------------------------------------------------------
+
+if not st.session_state.logged_in:
+    st.markdown("""
+    <div style="text-align:center; padding: 60px 20px;">
+        <h1 style="color:#f0f2f6;">🧪 Flavor Intelligence Dashboard</h1>
+        <p style="color:#c4c8d4; font-size:1.1rem;">GFI — Flavor & Aroma Initiative</p>
+        <p style="color:#a0a4b0; margin-top:20px;">Please identify yourself to enter the dashboard.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.form("login_gate"):
+        login_col1, login_col2 = st.columns(2)
+        with login_col1:
+            gate_name = st.text_input("Your name", placeholder="e.g., Sarah K.")
+        with login_col2:
+            gate_email = st.text_input("Your email", placeholder="e.g., sarah@gfi.org")
+
+        login_submitted = st.form_submit_button("🚀 Enter Dashboard", type="primary", use_container_width=True)
+
+        if login_submitted:
+            if gate_name.strip() and gate_email.strip():
+                st.session_state.user_name = gate_name.strip()
+                st.session_state.user_email = gate_email.strip()
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.warning("Please fill in both your name and email to continue.")
+
+    st.stop()
+
+# ---------------------------------------------------------------------------
 # AIRTABLE HELPERS
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 @st.cache_data(ttl=60)
 def load_airtable_sources():
-    """Fetch all sources from Airtable."""
     if not AT_TOKEN or not AT_BASE_ID:
         return []
-    records = []
-    offset = None
+    records, offset = [], None
     while True:
         params = {"pageSize": 100}
         if offset:
             params["offset"] = offset
         try:
-            r = requests.get(
-                f"{AT_BASE}/{quote(SOURCES_TABLE)}",
-                headers=AT_HEADERS, params=params, timeout=15
-            )
+            r = requests.get(f"{AT_BASE}/{quote(SOURCES_TABLE)}",
+                             headers=AT_HEADERS, params=params, timeout=15)
             if not r.ok:
-                st.warning(f"Airtable API error: {r.status_code}")
                 break
             data = r.json()
             records.extend(data.get("records", []))
             offset = data.get("offset")
             if not offset:
                 break
-        except Exception as e:
-            st.warning(f"Airtable connection error: {e}")
+        except Exception:
             break
     return records
 
 
 @st.cache_data(ttl=60)
 def load_airtable_molecules():
-    """Fetch all molecules from Airtable."""
     if not AT_TOKEN or not AT_BASE_ID:
         return []
-    records = []
-    offset = None
+    records, offset = [], None
     while True:
         params = {"pageSize": 100}
         if offset:
             params["offset"] = offset
         try:
-            r = requests.get(
-                f"{AT_BASE}/{quote(MOLECULES_TABLE)}",
-                headers=AT_HEADERS, params=params, timeout=15
-            )
+            r = requests.get(f"{AT_BASE}/{quote(MOLECULES_TABLE)}",
+                             headers=AT_HEADERS, params=params, timeout=15)
             if not r.ok:
                 break
             data = r.json()
@@ -198,61 +286,167 @@ def load_airtable_molecules():
             offset = data.get("offset")
             if not offset:
                 break
-        except Exception as e:
+        except Exception:
             break
     return records
 
 
+def push_to_airtable(table, fields_list):
+    """Push a batch of records to Airtable. Returns number of successes."""
+    successes = 0
+    # Airtable batch limit is 10
+    for i in range(0, len(fields_list), 10):
+        batch = fields_list[i:i+10]
+        payload = {"records": [{"fields": f} for f in batch]}
+        try:
+            r = requests.post(f"{AT_BASE}/{quote(table)}",
+                              headers=AT_HEADERS, json=payload, timeout=15)
+            if r.ok:
+                successes += len(batch)
+        except Exception:
+            pass
+    return successes
+
+
 def relevance_tier(score):
     if score is None:
-        return "🔴 Low"
+        return "🥉 3rd Level"
     score = float(score)
-    if score >= TIER_HIGH:
-        return "🟢 High"
-    elif score >= TIER_MID:
-        return "🟡 Mid"
-    return "🔴 Low"
+    if score >= TIER_1ST:
+        return "🥇 1st Level"
+    elif score >= TIER_2ND:
+        return "🥈 2nd Level"
+    return "🥉 3rd Level"
+
+
+def tier_css_class(tier):
+    if "1st" in tier:
+        return "relevant-1st"
+    elif "2nd" in tier:
+        return "relevant-2nd"
+    return "relevant-3rd"
 
 
 def score_badge_html(score):
     if score is None:
         return ""
     score = float(score)
-    if score >= TIER_HIGH:
-        cls = "score-high"
-    elif score >= TIER_MID:
-        cls = "score-mid"
+    if score >= TIER_1ST:
+        cls = "score-1st"
+    elif score >= TIER_2ND:
+        cls = "score-2nd"
     else:
-        cls = "score-low"
+        cls = "score-3rd"
     return f'<span class="score-badge {cls}">{score:.0%}</span>'
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MOCK PIPELINE ENGINE (runs in-process for Streamlit Cloud)
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# KEYWORDS FILE MANAGEMENT (for public keyword submissions)
+# ---------------------------------------------------------------------------
+
+KEYWORDS_FILE = Path(__file__).parent / "keywords_bible.json"
+
+def load_keywords_from_file():
+    """Load keywords from the JSON file on disk."""
+    if KEYWORDS_FILE.exists():
+        try:
+            data = json.loads(KEYWORDS_FILE.read_text())
+            if isinstance(data, list):
+                return data
+        except Exception:
+            pass
+    return DEFAULT_KEYWORDS[:]
+
+
+def save_keywords_to_file(keywords):
+    """Save keywords back to the JSON file."""
+    try:
+        KEYWORDS_FILE.write_text(json.dumps(keywords, indent=2, ensure_ascii=False))
+        return True
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# MOCK PIPELINE ENGINE
+# ---------------------------------------------------------------------------
+
+# ── Chemistry category hierarchy ──
+# Primary classes:   Amino Acids, Fats, Proteins, Sugars, Alcohols
+# Expanded classes:  Aldehydes, Ketones, Enols, Lipids, Thiols, Pyrazines,
+#                    Furanones, Nucleotides, Vitamins, etc.
+#
+# Each molecule carries both its primary_category (broad) and its
+# specific type (expanded), so the UI can group at either level.
+
+CATEGORY_HIERARCHY = {
+    # Primary categories → list of expanded sub-types
+    "Amino Acids":  ["amino acid", "sulfur amino acid", "thiol"],
+    "Fats":         ["fatty acid", "lipid", "phospholipid"],
+    "Proteins":     ["peptide", "enzyme"],
+    "Sugars":       ["sugar", "reducing sugar"],
+    "Alcohols":     ["alcohol", "enol"],
+    # Expanded categories (standalone)
+    "Aldehydes":    ["aldehyde"],
+    "Ketones":      ["ketone"],
+    "Pyrazines":    ["pyrazine"],
+    "Furanones":    ["furanone"],
+    "Nucleotides":  ["nucleotide"],
+    "Vitamins":     ["vitamin"],
+    "Other":        ["other"],
+}
+
+# Reverse lookup: specific type → primary category
+_TYPE_TO_PRIMARY = {}
+for _primary, _subtypes in CATEGORY_HIERARCHY.items():
+    for _st in _subtypes:
+        _TYPE_TO_PRIMARY[_st] = _primary
+
+# Ordered list of primary categories for display (broad first, then expanded)
+CATEGORY_DISPLAY_ORDER = [
+    "Amino Acids", "Fats", "Sugars", "Proteins", "Alcohols",
+    "Aldehydes", "Ketones", "Furanones", "Pyrazines",
+    "Nucleotides", "Vitamins", "Other",
+]
+
+def get_primary_category(mol_type):
+    """Map a specific molecule type to its primary display category."""
+    return _TYPE_TO_PRIMARY.get(mol_type, "Other")
+
 
 MOCK_MOLECULES = [
-    {"name": "2-methyl-3-furanthiol",  "type": "thiol",    "role": "marker",     "sensory": "meaty, roasted",       "confidence": 0.95},
-    {"name": "hexanal",                "type": "aldehyde", "role": "marker",     "sensory": "grassy, fatty",        "confidence": 0.88},
-    {"name": "pyrazine",               "type": "pyrazine", "role": "product",    "sensory": "roasted, nutty",       "confidence": 0.82},
-    {"name": "cysteine",               "type": "other",    "role": "precursor",  "sensory": "",                     "confidence": 0.90},
-    {"name": "2-furfurylthiol",        "type": "thiol",    "role": "marker",     "sensory": "coffee, meaty",        "confidence": 0.78},
-    {"name": "methional",              "type": "aldehyde", "role": "product",    "sensory": "cooked potato, brothy","confidence": 0.72},
-    {"name": "thiamine",               "type": "other",    "role": "precursor",  "sensory": "",                     "confidence": 0.85},
-    {"name": "ribose",                 "type": "other",    "role": "precursor",  "sensory": "",                     "confidence": 0.80},
-    {"name": "IMP",                    "type": "other",    "role": "potentiator","sensory": "umami",                "confidence": 0.76},
-    {"name": "linoleic acid",          "type": "acid",     "role": "precursor",  "sensory": "",                     "confidence": 0.83},
-    {"name": "4-hydroxy-2,5-dimethyl-3(2H)-furanone", "type": "furan", "role": "marker", "sensory": "caramel, meaty", "confidence": 0.91},
-    {"name": "2-acetyl-1-pyrroline",   "type": "other",    "role": "marker",     "sensory": "popcorn, roasted",     "confidence": 0.77},
+    # ── Amino Acids ──
+    {"name": "cysteine",               "type": "sulfur amino acid", "primary": "Amino Acids", "role": "precursor",  "sensory": "",                      "confidence": 0.90},
+    {"name": "methionine",             "type": "sulfur amino acid", "primary": "Amino Acids", "role": "precursor",  "sensory": "",                      "confidence": 0.87},
+    {"name": "2-methyl-3-furanthiol",  "type": "thiol",             "primary": "Amino Acids", "role": "marker",     "sensory": "meaty, roasted",        "confidence": 0.95},
+    {"name": "2-furfurylthiol",        "type": "thiol",             "primary": "Amino Acids", "role": "marker",     "sensory": "coffee, meaty",         "confidence": 0.78},
+    # ── Fats ──
+    {"name": "linoleic acid",          "type": "fatty acid",        "primary": "Fats",        "role": "precursor",  "sensory": "",                      "confidence": 0.83},
+    {"name": "phosphatidylcholine",    "type": "phospholipid",      "primary": "Fats",        "role": "precursor",  "sensory": "",                      "confidence": 0.79},
+    # ── Sugars ──
+    {"name": "ribose",                 "type": "reducing sugar",    "primary": "Sugars",      "role": "precursor",  "sensory": "",                      "confidence": 0.80},
+    {"name": "glucose",                "type": "reducing sugar",    "primary": "Sugars",      "role": "precursor",  "sensory": "",                      "confidence": 0.82},
+    # ── Aldehydes ──
+    {"name": "hexanal",                "type": "aldehyde",          "primary": "Aldehydes",   "role": "marker",     "sensory": "grassy, fatty",         "confidence": 0.88},
+    {"name": "methional",              "type": "aldehyde",          "primary": "Aldehydes",   "role": "product",    "sensory": "cooked potato, brothy", "confidence": 0.72},
+    # ── Pyrazines ──
+    {"name": "pyrazine",               "type": "pyrazine",          "primary": "Pyrazines",   "role": "product",    "sensory": "roasted, nutty",        "confidence": 0.82},
+    {"name": "2-acetyl-1-pyrroline",   "type": "pyrazine",          "primary": "Pyrazines",   "role": "marker",     "sensory": "popcorn, roasted",      "confidence": 0.77},
+    # ── Furanones ──
+    {"name": "4-hydroxy-2,5-dimethyl-3(2H)-furanone", "type": "furanone", "primary": "Furanones", "role": "marker", "sensory": "caramel, meaty",       "confidence": 0.91},
+    # ── Nucleotides ──
+    {"name": "IMP",                    "type": "nucleotide",        "primary": "Nucleotides", "role": "potentiator","sensory": "umami",                 "confidence": 0.76},
+    # ── Vitamins ──
+    {"name": "thiamine",               "type": "vitamin",           "primary": "Vitamins",    "role": "precursor",  "sensory": "",                      "confidence": 0.85},
 ]
 
 MOCK_CLAIMS = [
-    "Maillard reaction between cysteine and ribose at 140°C produces 2-methyl-3-furanthiol as the dominant meaty odorant.",
+    "Maillard reaction between cysteine and ribose at 140\u00b0C produces 2-methyl-3-furanthiol as the dominant meaty odorant.",
     "Hexanal concentration above 0.5 ppm indicates significant lipid oxidation in beef samples.",
     "Plant-based matrices require supplementation with sulfur-containing precursors to replicate meaty aroma.",
     "GC-MS with SPME headspace extraction achieves detection limits below 1 ppb for key meat volatiles.",
     "Phospholipid oxidation contributes more to species-specific meat flavor than triglyceride oxidation.",
-    "Pyrazine formation rate increases exponentially above 120°C in model Maillard systems.",
+    "Pyrazine formation rate increases exponentially above 120\u00b0C in model Maillard systems.",
     "Thiamine degradation is the primary source of meaty thiols in boiled and stewed meat.",
     "Cross-modal interactions between texture and aroma significantly alter meat-likeness perception in plant-based products.",
     "Lipid-Maillard interaction products exhibit lower odor thresholds than pure Maillard volatiles.",
@@ -264,20 +458,23 @@ MOCK_BRANCHES = [
     "Precursors", "Sulfur Chemistry", "Analytical Methods", "Meat Analogs",
 ]
 
-KEYWORDS_BIBLE = [
-    {"keyword": "Maillard reaction meat flavor", "branch": "Maillard Reaction", "priority": "HIGH"},
-    {"keyword": "cysteine ribose model system meat", "branch": "Precursors", "priority": "HIGH"},
-    {"keyword": "lipid oxidation beef phospholipid", "branch": "Lipid Oxidation", "priority": "HIGH"},
-    {"keyword": "plant-based meat flavor analog", "branch": "Meat Analogs", "priority": "HIGH"},
-    {"keyword": "2-methyl-3-furanthiol cooked meat", "branch": "Volatile Compounds", "priority": "HIGH"},
-    {"keyword": "volatile organic compounds meat aroma GC-MS", "branch": "Analytical Methods", "priority": "MEDIUM"},
-    {"keyword": "pyrazine formation roasting", "branch": "Maillard Reaction", "priority": "MEDIUM"},
-    {"keyword": "thiamine degradation sulfur compounds meat", "branch": "Sulfur Chemistry", "priority": "MEDIUM"},
-    {"keyword": "Strecker degradation amino acid flavor", "branch": "Precursors", "priority": "MEDIUM"},
-    {"keyword": "phospholipid oxidation species specific flavor", "branch": "Lipid Oxidation", "priority": "MEDIUM"},
-    {"keyword": "sensory evaluation meat analog consumer", "branch": "Meat Analogs", "priority": "LOW"},
-    {"keyword": "hexanal lipid oxidation indicator", "branch": "Lipid Oxidation", "priority": "LOW"},
+DEFAULT_KEYWORDS = [
+    {"keyword": "Maillard reaction meat flavor", "branch": "Maillard Reaction", "priority": "HIGH", "added_by": "system"},
+    {"keyword": "cysteine ribose model system meat", "branch": "Precursors", "priority": "HIGH", "added_by": "system"},
+    {"keyword": "lipid oxidation beef phospholipid", "branch": "Lipid Oxidation", "priority": "HIGH", "added_by": "system"},
+    {"keyword": "plant-based meat flavor analog", "branch": "Meat Analogs", "priority": "HIGH", "added_by": "system"},
+    {"keyword": "2-methyl-3-furanthiol cooked meat", "branch": "Volatile Compounds", "priority": "HIGH", "added_by": "system"},
+    {"keyword": "volatile organic compounds meat aroma GC-MS", "branch": "Analytical Methods", "priority": "MEDIUM", "added_by": "system"},
+    {"keyword": "pyrazine formation roasting", "branch": "Maillard Reaction", "priority": "MEDIUM", "added_by": "system"},
+    {"keyword": "thiamine degradation sulfur compounds meat", "branch": "Sulfur Chemistry", "priority": "MEDIUM", "added_by": "system"},
+    {"keyword": "Strecker degradation amino acid flavor", "branch": "Precursors", "priority": "MEDIUM", "added_by": "system"},
+    {"keyword": "phospholipid oxidation species specific flavor", "branch": "Lipid Oxidation", "priority": "MEDIUM", "added_by": "system"},
+    {"keyword": "sensory evaluation meat analog consumer", "branch": "Meat Analogs", "priority": "LOW", "added_by": "system"},
+    {"keyword": "hexanal lipid oxidation indicator", "branch": "Lipid Oxidation", "priority": "LOW", "added_by": "system"},
 ]
+
+# Load keywords — from file if it exists, otherwise defaults
+KEYWORDS_BIBLE = load_keywords_from_file()
 
 
 def fetch_openalex_papers(keyword, max_results=8):
@@ -320,21 +517,16 @@ def fetch_openalex_papers(keyword, max_results=8):
 
 
 def mock_extraction(paper, keyword_entry):
-    """
-    Simulate Claude extraction on a paper.
-    Returns a result dict with relevance score, molecules, claims, branch.
-    """
+    """Simulate Claude extraction on a paper."""
     title = paper.get("title", "")
     abstract = paper.get("abstract", "")
     seed = int(hashlib.md5(title.lower().encode()).hexdigest()[:8], 16)
     rng = random.Random(seed)
 
-    # Determine relevance based on keyword overlap with title/abstract
     text = (title + " " + abstract).lower()
     kw_words = keyword_entry["keyword"].lower().split()
     overlap = sum(1 for w in kw_words if w in text) / max(len(kw_words), 1)
 
-    # Blend keyword overlap with random score for variety
     raw_score = 0.4 * overlap + 0.6 * rng.random()
     relevance_score = round(min(max(raw_score, 0.0), 1.0), 2)
     relevant = relevance_score >= 0.35
@@ -350,7 +542,6 @@ def mock_extraction(paper, keyword_entry):
             "claims": [],
         }
 
-    # Pick random molecules and claims
     n_mols = rng.randint(1, 4)
     n_claims = rng.randint(1, 3)
     mols = rng.sample(MOCK_MOLECULES, min(n_mols, len(MOCK_MOLECULES)))
@@ -365,19 +556,75 @@ def mock_extraction(paper, keyword_entry):
         "keyword": keyword_entry["keyword"],
         "molecules": mols,
         "claims": claims,
+        "timestamp": datetime.now().isoformat(),
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# RESEARCH FIELDS & PAPER TYPES (for pipeline focus grids)
+# ---------------------------------------------------------------------------
+
+RESEARCH_FIELDS = [
+    {"name": "Maillard Chemistry",    "icon": "🔥", "desc": "Browning reactions, sugar-amino acid interactions"},
+    {"name": "Lipid Oxidation",       "icon": "🫧", "desc": "Fat breakdown, rancidity, flavor formation"},
+    {"name": "Sensory Science",       "icon": "👃", "desc": "Human perception, taste panels, psychophysics"},
+    {"name": "Analytical Methods",    "icon": "🔬", "desc": "GC-MS, SPME, headspace analysis techniques"},
+    {"name": "Plant-Based Analogs",   "icon": "🌱", "desc": "Meat alternatives, flavor replication"},
+    {"name": "Fermentation",          "icon": "🧫", "desc": "Microbial flavor generation, fermented foods"},
+    {"name": "Enzymatic Processes",   "icon": "⚗️", "desc": "Enzyme-catalyzed flavor development"},
+    {"name": "Sulfur Chemistry",      "icon": "💛", "desc": "Thiols, disulfides, meaty aroma precursors"},
+]
+
+PAPER_TYPES = [
+    {"name": "Experimental Studies", "icon": "🧪", "desc": "Original lab research with data"},
+    {"name": "Review Articles",      "icon": "📖", "desc": "Comprehensive literature surveys"},
+    {"name": "Meta-analyses",        "icon": "📊", "desc": "Statistical synthesis across studies"},
+    {"name": "Patents",              "icon": "📜", "desc": "Industrial applications and IP"},
+]
+
+
+def get_smart_keyword_recommendations(keywords_bible, used_keywords, n=8):
+    """Pick smart keyword recommendations: prioritize HIGH, then unused, then variety across branches."""
+    unused = [kw for kw in keywords_bible if kw["keyword"] not in used_keywords]
+    used = [kw for kw in keywords_bible if kw["keyword"] in used_keywords]
+
+    # Sort: HIGH priority first, then MEDIUM, then LOW
+    priority_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+    unused.sort(key=lambda x: priority_order.get(x.get("priority", "LOW"), 2))
+
+    # Ensure branch diversity: pick from different branches
+    recommended = []
+    seen_branches = set()
+    for kw in unused:
+        branch = kw.get("branch", "Other")
+        if branch not in seen_branches or len(recommended) < n:
+            recommended.append(kw)
+            seen_branches.add(branch)
+        if len(recommended) >= n:
+            break
+
+    # Fill remaining slots from used keywords if needed
+    if len(recommended) < n:
+        for kw in used:
+            if kw not in recommended:
+                recommended.append(kw)
+            if len(recommended) >= n:
+                break
+
+    return recommended
+
+
+# ---------------------------------------------------------------------------
 # SIDEBAR
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 with st.sidebar:
     st.markdown("### 🧪 Flavor Intelligence")
     st.caption("GFI — Flavor & Aroma Initiative")
+    st.markdown(f"**👤 {st.session_state.user_name}**")
+    st.caption(st.session_state.user_email)
     st.divider()
 
-    # Connection status
     if AT_TOKEN and AT_BASE_ID:
         st.success("Airtable: Connected", icon="✅")
         sources_raw = load_airtable_sources()
@@ -392,12 +639,12 @@ with st.sidebar:
 
     st.divider()
 
-    # Pipeline session stats
     st.markdown("**This Session**")
     st.metric("Papers Processed", st.session_state.papers_processed)
     st.metric("Papers Dumped", st.session_state.papers_dumped)
     st.metric("Molecules Found", len(st.session_state.molecules_found))
     st.metric("Claims Extracted", len(st.session_state.claims_extracted))
+    st.metric("Pending Review", len(st.session_state.review_queue))
 
     st.divider()
     if st.button("🔄 Refresh Airtable Data"):
@@ -405,13 +652,18 @@ with st.sidebar:
         st.rerun()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # MAIN TABS
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
-tab_live, tab_sources, tab_molecules, tab_claims, tab_keywords = st.tabs([
-    "🔴 Live Pipeline", "📚 Sources & Relevance", "🧬 Molecules",
-    "📋 Claims Feed", "🧠 Keywords Brain",
+tab_live, tab_review, tab_sources, tab_molecules, tab_claims, tab_keywords, tab_community = st.tabs([
+    "🔴 Live Pipeline",
+    "✅ Review Gate",
+    "📚 Sources & Relevance",
+    "🧬 Last Molecules Added",
+    "📋 Claims Feed",
+    "🧠 Keywords Brain",
+    "🏆 Community",
 ])
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -423,33 +675,153 @@ with tab_live:
     st.caption(
         "Watch the algorithm process academic papers in real-time. "
         "Papers are fetched from OpenAlex, analyzed for relevance, "
-        "and classified into relevance tiers."
+        "and classified into 1st / 2nd / 3rd level tiers."
     )
 
-    # Controls
-    ctrl1, ctrl2, ctrl3 = st.columns([2, 1, 1])
-    with ctrl1:
-        n_keywords = st.slider(
-            "Keywords to process", 1, len(KEYWORDS_BIBLE),
-            value=min(4, len(KEYWORDS_BIBLE)),
-            help="How many keywords from the bible to run"
-        )
-    with ctrl2:
-        papers_per_kw = st.slider("Papers per keyword", 3, 15, value=5)
-    with ctrl3:
-        speed = st.select_slider(
-            "Animation speed",
-            options=["Slow", "Normal", "Fast"],
-            value="Normal"
-        )
+    # ---- COMPLETION POP-UP ----
+    if st.session_state.run_complete:
+        total = st.session_state.papers_processed
+        relevant = total - st.session_state.papers_dumped
+        mols = len(st.session_state.molecules_found)
+        claims = len(st.session_state.claims_extracted)
+        st.markdown(f"""
+<div class="completion-banner">
+    <h2>🎉 Pipeline Run Complete!</h2>
+    <p><strong>{total}</strong> papers processed &nbsp;·&nbsp;
+       <strong>{relevant}</strong> relevant &nbsp;·&nbsp;
+       <strong>{mols}</strong> molecules &nbsp;·&nbsp;
+       <strong>{claims}</strong> claims</p>
+    <p style="margin-top:10px; font-size:0.9rem;">
+       Head to the <strong>Review Gate</strong> tab to approve items before they reach Airtable.
+    </p>
+</div>
+        """, unsafe_allow_html=True)
+        st.session_state.run_complete = False
 
-    delay_map = {"Slow": 1.5, "Normal": 0.7, "Fast": 0.2}
-    delay = delay_map[speed]
+    # ---- SESSION HISTORY ----
+    if st.session_state.session_history:
+        st.markdown("#### 📂 Previous Runs")
+        hist_cols = st.columns(min(len(st.session_state.session_history), 5))
+        for i, sess in enumerate(st.session_state.session_history[-5:]):
+            with hist_cols[i % len(hist_cols)]:
+                with st.expander(f"🕐 {sess['time']}", expanded=False):
+                    st.markdown(f"""
+<div class="session-card">
+    <div class="session-date">{sess['date']}</div>
+    <div><span class="session-stat">{sess['processed']}</span> processed</div>
+    <div><span class="session-stat">{sess['relevant']}</span> relevant</div>
+    <div><span class="session-stat">{sess['dumped']}</span> dumped</div>
+    <div><span class="session-stat">{sess['molecules']}</span> molecules</div>
+    <div><span class="session-stat">{sess['claims']}</span> claims</div>
+    <div style="margin-top:6px; color:#c4c8d4; font-size:0.8rem;">
+        Keywords: {', '.join(sess.get('keywords', [])[:3])}{'...' if len(sess.get('keywords', [])) > 3 else ''}
+    </div>
+</div>
+                    """, unsafe_allow_html=True)
+        st.divider()
+
+    # ================================================================
+    # STEP 1: CHOOSE YOUR FOCUS — Research Fields
+    # ================================================================
+    st.markdown("#### 🔬 Focus Your Search — Research Fields")
+    st.caption("Select the fields you want the pipeline to explore")
+
+    field_cols = st.columns(4)
+    selected_fields = []
+    for i, field in enumerate(RESEARCH_FIELDS):
+        with field_cols[i % 4]:
+            if st.checkbox(
+                f"{field['icon']} {field['name']}",
+                value=(i < 3),  # first 3 selected by default
+                key=f"field_{i}",
+                help=field["desc"]
+            ):
+                selected_fields.append(field["name"])
+
+    # ================================================================
+    # STEP 2: CHOOSE YOUR FOCUS — Paper Types
+    # ================================================================
+    st.markdown("#### 📄 Paper Types")
+    st.caption("What kinds of papers should the pipeline look for?")
+
+    type_cols = st.columns(4)
+    selected_paper_types = []
+    for i, ptype in enumerate(PAPER_TYPES):
+        with type_cols[i % 4]:
+            if st.checkbox(
+                f"{ptype['icon']} {ptype['name']}",
+                value=(i < 2),  # first 2 selected by default
+                key=f"ptype_{i}",
+                help=ptype["desc"]
+            ):
+                selected_paper_types.append(ptype["name"])
 
     st.divider()
 
-    if st.button("🚀 Start Pipeline Run", type="primary", use_container_width=True):
-        # Reset session state
+    # ================================================================
+    # STEP 3: KEYWORD FOCUS — Smart Recommendations + Custom
+    # ================================================================
+    st.markdown("#### 🎯 Keyword Focus")
+    st.caption("Toggle recommended keywords and add your own")
+
+    recommended_kws = get_smart_keyword_recommendations(
+        KEYWORDS_BIBLE, st.session_state.keywords_used, n=8
+    )
+
+    # Render keyword chips as checkboxes in a grid
+    selected_keywords = []
+    kw_cols = st.columns(4)
+    for i, kw in enumerate(recommended_kws):
+        priority_icon = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "⚪"}.get(kw.get("priority", ""), "⚪")
+        with kw_cols[i % 4]:
+            if st.checkbox(
+                f"{priority_icon} {kw['keyword'][:35]}",
+                value=(kw.get("priority") == "HIGH"),
+                key=f"kw_sel_{i}",
+                help=f"Branch: {kw.get('branch', '')} · Priority: {kw.get('priority', '')}"
+            ):
+                selected_keywords.append(kw)
+
+    # Custom keyword input
+    custom_kw_text = st.text_input(
+        "➕ Extra keywords (comma-separated)",
+        placeholder="e.g., vanillin lignin, umami peptides, fermented soy",
+        help="Add any keywords you want the pipeline to search for"
+    )
+
+    # Parse custom keywords into keyword entries
+    custom_entries = []
+    if custom_kw_text.strip():
+        for raw_kw in custom_kw_text.split(","):
+            kw = raw_kw.strip()
+            if kw:
+                custom_entries.append({
+                    "keyword": kw,
+                    "branch": "Custom",
+                    "priority": "MEDIUM",
+                    "added_by": st.session_state.user_name,
+                })
+
+    # Papers per keyword control
+    papers_per_kw = st.slider("Papers per keyword", 3, 15, value=5)
+
+    all_keywords_to_run = selected_keywords + custom_entries
+
+    st.divider()
+
+    # ================================================================
+    # RUN PIPELINE
+    # ================================================================
+
+    if not all_keywords_to_run:
+        st.warning("Select at least one keyword to run the pipeline.")
+    elif not selected_fields:
+        st.warning("Select at least one research field.")
+
+    run_disabled = not all_keywords_to_run or not selected_fields
+
+    if st.button("🚀 Start Pipeline Run", type="primary", use_container_width=True, disabled=run_disabled):
+        # Reset session state for new run
         st.session_state.pipeline_results = []
         st.session_state.pipeline_log = []
         st.session_state.papers_processed = 0
@@ -457,8 +829,34 @@ with tab_live:
         st.session_state.keywords_used = set()
         st.session_state.molecules_found = {}
         st.session_state.claims_extracted = []
+        st.session_state.review_queue = []
+        st.session_state.run_complete = False
 
-        # Layout: live feed on left, stats on right
+        # Track contributor stats
+        user_email = st.session_state.user_email
+        if user_email not in st.session_state.contributor_stats:
+            st.session_state.contributor_stats[user_email] = {
+                "name": st.session_state.user_name, "keywords": 0, "flags": 0, "runs": 0,
+            }
+        st.session_state.contributor_stats[user_email]["runs"] += 1
+
+        # Add custom keywords to the bible for future users
+        for entry in custom_entries:
+            existing_kws = [kw["keyword"].lower() for kw in KEYWORDS_BIBLE]
+            if entry["keyword"].lower() not in existing_kws:
+                full_entry = {
+                    **entry,
+                    "added_email": user_email,
+                    "added_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                }
+                KEYWORDS_BIBLE.append(full_entry)
+                save_keywords_to_file(KEYWORDS_BIBLE)
+                st.session_state.contributor_stats[user_email]["keywords"] += 1
+
+        # Append field/type context to search queries for better results
+        field_terms = " ".join(f.lower().replace("-", " ") for f in selected_fields[:2])
+        type_terms = " ".join(t.lower() for t in selected_paper_types[:1])
+
         feed_col, stats_col = st.columns([3, 1])
 
         with stats_col:
@@ -469,28 +867,37 @@ with tab_live:
             stat_molecules = st.empty()
             stat_claims = st.empty()
             st.markdown("---")
-            st.markdown("### Relevance Tiers")
-            tier_high_ct = st.empty()
-            tier_mid_ct = st.empty()
-            tier_low_ct = st.empty()
+            st.markdown("### Relevance Levels")
+            tier_1st_ct = st.empty()
+            tier_2nd_ct = st.empty()
+            tier_3rd_ct = st.empty()
             st.markdown("---")
             tier_chart_slot = st.empty()
 
         with feed_col:
             st.markdown("### 📡 Processing Feed")
+            st.caption(
+                f"Fields: {', '.join(selected_fields)} · "
+                f"Types: {', '.join(selected_paper_types) or 'All'}"
+            )
             progress_bar = st.progress(0)
             status_text = st.empty()
             feed_container = st.container()
 
-        keywords_to_run = KEYWORDS_BIBLE[:n_keywords]
-        total_work = len(keywords_to_run) * papers_per_kw
+        total_work = len(all_keywords_to_run) * papers_per_kw
         completed = 0
-        tier_counts = {"🟢 High": 0, "🟡 Mid": 0, "🔴 Low": 0}
+        tier_counts = {"🥇 1st Level": 0, "🥈 2nd Level": 0, "🥉 3rd Level": 0}
+        kw_names_used = []
+        delay = 0.5
 
-        for kw_entry in keywords_to_run:
+        for kw_entry in all_keywords_to_run:
             keyword = kw_entry["keyword"]
             branch = kw_entry.get("branch", "Other")
             st.session_state.keywords_used.add(keyword)
+            kw_names_used.append(keyword)
+
+            # Enhance search with field context
+            search_query = f"{keyword} {field_terms}"
 
             with feed_container:
                 st.markdown(
@@ -498,9 +905,7 @@ with tab_live:
                 )
 
             status_text.markdown(f"⏳ Fetching papers for: *{keyword}*...")
-
-            # Fetch real papers from OpenAlex
-            papers = fetch_openalex_papers(keyword, papers_per_kw)
+            papers = fetch_openalex_papers(search_query, papers_per_kw)
 
             if not papers:
                 with feed_container:
@@ -516,33 +921,42 @@ with tab_live:
                     f"🔬 Analyzing: *{paper['title'][:60]}...*"
                 )
 
-                # Run mock extraction
                 result = mock_extraction(paper, kw_entry)
                 st.session_state.papers_processed += 1
                 st.session_state.pipeline_results.append(result)
 
-                # Determine tier
                 tier = relevance_tier(result["relevance_score"])
                 tier_counts[tier] = tier_counts.get(tier, 0) + 1
 
                 if result["relevant"]:
-                    # Collect molecules
                     for mol in result.get("molecules", []):
                         name = mol["name"]
                         if name not in st.session_state.molecules_found:
-                            st.session_state.molecules_found[name] = mol
+                            st.session_state.molecules_found[name] = {
+                                **mol,
+                                "discovered_at": datetime.now().isoformat(),
+                                "from_keyword": keyword,
+                            }
 
-                    # Collect claims
                     for claim in result.get("claims", []):
                         if claim not in st.session_state.claims_extracted:
                             st.session_state.claims_extracted.append(claim)
 
-                    # Show in feed
-                    card_class = (
-                        "relevant-high" if tier == "🟢 High"
-                        else "relevant-mid" if tier == "🟡 Mid"
-                        else "relevant-low"
-                    )
+                    st.session_state.review_queue.append({
+                        "type": "source",
+                        "title": result["title"],
+                        "year": result.get("year"),
+                        "venue": result.get("venue", ""),
+                        "relevance_score": result["relevance_score"],
+                        "tier": tier,
+                        "branch": result.get("branch", ""),
+                        "molecules": result.get("molecules", []),
+                        "claims": result.get("claims", []),
+                        "url": result.get("url", ""),
+                        "keyword": keyword,
+                    })
+
+                    card_class = tier_css_class(tier)
                     with feed_container:
                         score_html = score_badge_html(result["relevance_score"])
                         mols_html = " ".join(
@@ -556,8 +970,8 @@ with tab_live:
                         st.markdown(f"""
 <div class="paper-card {card_class}">
   <strong>{result['title'][:80]}</strong>
-  <span style="float:right">{score_html}</span><br>
-  <span style="font-size:0.8rem;color:#888">{result.get('year','')} · {result.get('venue','')[:40]} · {tier}</span><br>
+  <span style="float:right">{score_html}</span>
+  <div class="meta-line">{result.get('year','')} · {result.get('venue','')[:40]} · {tier} · {branch}</div>
   {mols_html}
   {('<br>' + claims_html) if claims_html else ''}
 </div>
@@ -567,9 +981,9 @@ with tab_live:
                     with feed_container:
                         st.markdown(f"""
 <div class="paper-card dumped">
-  <span style="color:#e74c3c">✗ DUMPED</span> &nbsp;
-  <span style="color:#888">{result['title'][:70]}</span>
-  <span style="float:right;font-size:0.8rem;color:#666">Score: {result['relevance_score']:.0%}</span>
+  <span style="color:#e74c3c; font-weight:600">✗ DUMPED</span> &nbsp;
+  <span style="color:#c4c8d4">{result['title'][:70]}</span>
+  <span style="float:right;font-size:0.85rem;color:#a0a4b0">Score: {result['relevance_score']:.0%}</span>
 </div>
                         """, unsafe_allow_html=True)
 
@@ -581,64 +995,121 @@ with tab_live:
                 stat_molecules.metric("Molecules", len(st.session_state.molecules_found))
                 stat_claims.metric("Claims", len(st.session_state.claims_extracted))
 
-                tier_high_ct.markdown(
-                    f"<span class='tier-high'>{tier_counts.get('🟢 High',0)}</span> Very Relevant",
+                tier_1st_ct.markdown(
+                    f"<span class='tier-1st'>{tier_counts.get('🥇 1st Level',0)}</span> 1st Level",
                     unsafe_allow_html=True
                 )
-                tier_mid_ct.markdown(
-                    f"<span class='tier-mid'>{tier_counts.get('🟡 Mid',0)}</span> Mid Relevance",
+                tier_2nd_ct.markdown(
+                    f"<span class='tier-2nd'>{tier_counts.get('🥈 2nd Level',0)}</span> 2nd Level",
                     unsafe_allow_html=True
                 )
-                tier_low_ct.markdown(
-                    f"<span class='tier-low'>{tier_counts.get('🔴 Low',0)}</span> Low Relevance",
+                tier_3rd_ct.markdown(
+                    f"<span class='tier-3rd'>{tier_counts.get('🥉 3rd Level',0)}</span> 3rd Level",
                     unsafe_allow_html=True
                 )
 
-                # Live tier chart
                 tier_df = pd.DataFrame({
                     "Tier": list(tier_counts.keys()),
                     "Count": list(tier_counts.values()),
                 })
-                fig = px.pie(
-                    tier_df, values="Count", names="Tier",
-                    color="Tier", color_discrete_map=TIER_COLORS,
-                    hole=0.45,
-                )
+                fig = px.pie(tier_df, values="Count", names="Tier",
+                             color="Tier", color_discrete_map=TIER_COLORS, hole=0.45)
                 fig.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#e0e4f0",
-                    showlegend=False,
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                    font_color="#e0e4f0", showlegend=False,
                     height=200, margin=dict(t=10, b=10, l=10, r=10),
                 )
                 tier_chart_slot.plotly_chart(fig, use_container_width=True)
 
                 time.sleep(delay)
 
+        # ---- RUN COMPLETE ----
         status_text.markdown("✅ **Pipeline run complete!**")
         progress_bar.progress(1.0)
-        st.balloons()
 
-    # Show previous results if any
+        st.session_state.session_history.append({
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "time": datetime.now().strftime("%H:%M"),
+            "processed": st.session_state.papers_processed,
+            "relevant": st.session_state.papers_processed - st.session_state.papers_dumped,
+            "dumped": st.session_state.papers_dumped,
+            "molecules": len(st.session_state.molecules_found),
+            "claims": len(st.session_state.claims_extracted),
+            "keywords": kw_names_used,
+            "fields": selected_fields,
+            "paper_types": selected_paper_types,
+            "user": st.session_state.user_name,
+        })
+        st.session_state.session_history = st.session_state.session_history[-5:]
+
+        total = st.session_state.papers_processed
+        relevant = total - st.session_state.papers_dumped
+        mols = len(st.session_state.molecules_found)
+        claims_ct = len(st.session_state.claims_extracted)
+        review_ct = len(st.session_state.review_queue)
+
+        with feed_container:
+            st.markdown(f"""
+<div class="completion-banner">
+    <h2>🎉 Pipeline Run Complete!</h2>
+    <p><strong>{total}</strong> papers &nbsp;·&nbsp;
+       <strong>{relevant}</strong> relevant &nbsp;·&nbsp;
+       <strong>{mols}</strong> molecules &nbsp;·&nbsp;
+       <strong>{claims_ct}</strong> claims</p>
+    <p style="margin-top:10px; font-size:0.9rem;">
+        <strong>{review_ct}</strong> items waiting in the <strong>Review Gate</strong> for Daniel's approval.
+    </p>
+</div>
+            """, unsafe_allow_html=True)
+
+        st.balloons()
+        st.session_state.run_complete = True
+
+        # ---- POST-RUN FEEDBACK ----
+        with feed_container:
+            st.markdown("---")
+            st.markdown("#### 💬 How was this run?")
+            with st.form("run_feedback", clear_on_submit=True):
+                fb_rating = st.select_slider(
+                    "Was this run useful?",
+                    options=["Not useful", "Somewhat", "Useful", "Very useful", "Excellent"],
+                    value="Useful"
+                )
+                fb_learned = st.text_area(
+                    "What did you learn or notice?",
+                    placeholder="e.g., Found interesting papers on thiamine degradation, "
+                                "the Maillard keywords gave the best results...",
+                    height=80,
+                )
+                fb_submit = st.form_submit_button("📨 Submit Feedback")
+                if fb_submit:
+                    st.session_state.run_feedback.append({
+                        "user": st.session_state.user_name,
+                        "email": st.session_state.user_email,
+                        "rating": fb_rating,
+                        "learned": fb_learned,
+                        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "papers_processed": total,
+                        "keywords": kw_names_used,
+                    })
+                    st.success("Thanks for the feedback! Daniel will see this.")
+
+    # Show previous results if any (after rerun)
     elif st.session_state.pipeline_results:
         st.info(f"Showing results from last run: {st.session_state.papers_processed} papers processed")
         results = st.session_state.pipeline_results
-        relevant = [r for r in results if r.get("relevant")]
-        dumped = [r for r in results if not r.get("relevant")]
+        relevant_results = [r for r in results if r.get("relevant")]
+        dumped_results = [r for r in results if not r.get("relevant")]
 
         r1, r2, r3, r4 = st.columns(4)
         r1.metric("Total Processed", len(results))
-        r2.metric("Relevant", len(relevant))
-        r3.metric("Dumped", len(dumped))
-        r4.metric("Acceptance Rate", f"{len(relevant)/max(len(results),1):.0%}")
+        r2.metric("Relevant", len(relevant_results))
+        r3.metric("Dumped", len(dumped_results))
+        r4.metric("Acceptance Rate", f"{len(relevant_results)/max(len(results),1):.0%}")
 
-        for r in relevant[:20]:
+        for idx, r in enumerate(relevant_results[:20]):
             tier = relevance_tier(r["relevance_score"])
-            card_class = (
-                "relevant-high" if tier == "🟢 High"
-                else "relevant-mid" if tier == "🟡 Mid"
-                else "relevant-low"
-            )
+            card_class = tier_css_class(tier)
             mols_html = " ".join(
                 f'<span class="mol-chip">{m["name"]}</span>'
                 for m in r.get("molecules", [])[:3]
@@ -647,40 +1118,174 @@ with tab_live:
 <div class="paper-card {card_class}">
   <strong>{r['title'][:80]}</strong>
   {score_badge_html(r['relevance_score'])} &nbsp; {tier} · {r.get('branch','')}<br>
-  <span style="font-size:0.8rem;color:#888">{r.get('year','')} · {r.get('venue','')[:40]}</span><br>
+  <div class="meta-line">{r.get('year','')} · {r.get('venue','')[:40]}</div>
   {mols_html}
 </div>
             """, unsafe_allow_html=True)
 
+            # Flag for Review button
+            if st.button(f"🚩 Flag for Daniel", key=f"flag_result_{idx}"):
+                st.session_state.flagged_items.append({
+                    **r,
+                    "flagged_by": st.session_state.user_name,
+                    "flagged_email": st.session_state.user_email,
+                    "flagged_at": datetime.now().isoformat(),
+                    "flag_reason": "Interesting finding",
+                })
+                # Update contributor stats
+                ue = st.session_state.user_email
+                if ue not in st.session_state.contributor_stats:
+                    st.session_state.contributor_stats[ue] = {
+                        "name": st.session_state.user_name, "keywords": 0, "flags": 0, "runs": 0,
+                    }
+                st.session_state.contributor_stats[ue]["flags"] += 1
+                st.success(f"🚩 Flagged! Daniel will see this in the Review Gate.")
+
     else:
         st.markdown("""
         **How it works:**
-        1. Click **Start Pipeline Run** above
-        2. The algorithm fetches real papers from OpenAlex (academic database)
-        3. Each paper is analyzed for relevance to meat flavor chemistry
-        4. Papers are classified: 🟢 **Very Relevant** (≥80%) · 🟡 **Mid** (60-80%) · 🔴 **Low** (<60%)
-        5. Molecules and claims are extracted from relevant papers
-        6. Irrelevant papers are **dumped** with a reason
+        1. **Choose your focus** — pick research fields and paper types above
+        2. **Select keywords** — toggle recommended keywords or add your own
+        3. Click **Start Pipeline Run**
+        4. Papers are fetched from OpenAlex and analyzed for relevance
+        5. Results are classified: 🥇 **1st Level** · 🥈 **2nd Level** · 🥉 **3rd Level**
+        6. Relevant items go to the **Review Gate** for approval before reaching Airtable
+        7. Your custom keywords are saved for future users
 
-        *Adjust the sliders above to control how many keywords and papers to process.*
+        *Every run you do makes the database smarter for everyone.*
         """)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# TAB 2 — SOURCES & RELEVANCE
+# TAB 2 — REVIEW GATE (Daniel's approval flow)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+with tab_review:
+    st.header("✅ Review Gate — Daniel's Approval")
+    st.caption(
+        "This is the bridge between pipeline discoveries and Airtable. "
+        "Only items you approve here will be pushed to the Airtable database."
+    )
+
+    queue = st.session_state.review_queue
+
+    if not queue and not st.session_state.approved_items:
+        st.info("No items to review. Run the pipeline first to populate the queue.")
+    else:
+        # Summary metrics
+        q1, q2, q3 = st.columns(3)
+        q1.metric("⏳ Pending Review", len(queue))
+        q2.metric("✅ Approved", len(st.session_state.approved_items))
+        q3.metric("❌ Rejected", len(st.session_state.rejected_items))
+
+        st.divider()
+
+        # Batch actions
+        if queue:
+            st.markdown("#### Pending Items")
+            batch_col1, batch_col2, batch_col3 = st.columns([1, 1, 2])
+            with batch_col1:
+                if st.button("✅ Approve All", type="primary"):
+                    st.session_state.approved_items.extend(queue)
+                    st.session_state.review_queue = []
+                    st.rerun()
+            with batch_col2:
+                if st.button("❌ Reject All"):
+                    st.session_state.rejected_items.extend(queue)
+                    st.session_state.review_queue = []
+                    st.rerun()
+
+            st.divider()
+
+            # Individual items
+            for idx, item in enumerate(queue):
+                tier = item.get("tier", "🥉 3rd Level")
+                card_class = tier_css_class(tier)
+                mols_html = " ".join(
+                    f'<span class="mol-chip">{m["name"]}</span>'
+                    for m in item.get("molecules", [])[:4]
+                )
+                claims_html = " ".join(
+                    f'<span class="claim-chip">{c[:60]}...</span>'
+                    for c in item.get("claims", [])[:2]
+                )
+
+                st.markdown(f"""
+<div class="review-card" style="border-left: 4px solid {TIER_COLORS.get(tier, '#555')};">
+  <strong>{item['title'][:90]}</strong>
+  {score_badge_html(item.get('relevance_score'))} &nbsp; {tier}
+  <div class="review-meta">{item.get('year','')} · {item.get('venue','')[:40]} · Branch: {item.get('branch','')}</div>
+  <div style="margin-top:6px">{mols_html}</div>
+  <div style="margin-top:4px">{claims_html}</div>
+</div>
+                """, unsafe_allow_html=True)
+
+                btn_col1, btn_col2, btn_col3 = st.columns([1, 1, 4])
+                with btn_col1:
+                    if st.button("✅ Approve", key=f"approve_{idx}"):
+                        approved = st.session_state.review_queue.pop(idx)
+                        st.session_state.approved_items.append(approved)
+                        st.rerun()
+                with btn_col2:
+                    if st.button("❌ Reject", key=f"reject_{idx}"):
+                        rejected = st.session_state.review_queue.pop(idx)
+                        st.session_state.rejected_items.append(rejected)
+                        st.rerun()
+
+        # Push approved to Airtable
+        if st.session_state.approved_items:
+            st.divider()
+            st.markdown("#### ✅ Approved Items")
+            st.markdown(f"**{len(st.session_state.approved_items)}** items approved and ready to push to Airtable.")
+
+            for item in st.session_state.approved_items[:10]:
+                tier = item.get("tier", "")
+                st.markdown(f"""
+<div class="session-card">
+  ✅ <strong>{item['title'][:80]}</strong> — {tier} ({item.get('relevance_score',0):.0%})
+</div>
+                """, unsafe_allow_html=True)
+
+            if len(st.session_state.approved_items) > 10:
+                st.caption(f"...and {len(st.session_state.approved_items) - 10} more")
+
+            if AT_TOKEN and AT_BASE_ID:
+                if st.button("📤 Push Approved to Airtable", type="primary", use_container_width=True):
+                    fields_list = []
+                    for item in st.session_state.approved_items:
+                        fields_list.append({
+                            "Name": item.get("title", "")[:200],
+                            "Year": item.get("year"),
+                            "Venue": item.get("venue", ""),
+                            "branch": item.get("branch", ""),
+                            "relevance_score": item.get("relevance_score", 0),
+                            "URL": item.get("url", ""),
+                            "db_source": "Pipeline Dashboard",
+                        })
+                    successes = push_to_airtable(SOURCES_TABLE, fields_list)
+                    if successes > 0:
+                        st.success(f"✅ Successfully pushed {successes} sources to Airtable!")
+                        st.session_state.approved_items = []
+                        st.cache_data.clear()
+                    else:
+                        st.error("Failed to push to Airtable. Check your API token and base ID.")
+            else:
+                st.warning("Connect Airtable (add secrets) to push approved items.")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TAB 3 — SOURCES & RELEVANCE
 # ═══════════════════════════════════════════════════════════════════════════════
 
 with tab_sources:
     st.header("📚 Sources — Relevance Filtration")
     st.caption(
-        "3-tier classification: **🟢 Very Relevant** (≥80%) · "
-        "**🟡 Mid Relevance** (60–80%) · **🔴 Little Relevance** (<60%)"
+        "3-tier classification: **🥇 1st Level** (≥80%) · "
+        "**🥈 2nd Level** (60–80%) · **🥉 3rd Level** (<60%)"
     )
 
-    # Combine Airtable data + pipeline session data
     all_sources = []
 
-    # From Airtable
     for rec in sources_raw:
         f = rec.get("fields", {})
         score = f.get("relevance_score", 0) or 0
@@ -695,7 +1300,6 @@ with tab_sources:
             "source": "Airtable",
         })
 
-    # From current session
     for r in st.session_state.pipeline_results:
         if r.get("relevant"):
             all_sources.append({
@@ -715,13 +1319,12 @@ with tab_sources:
         df = pd.DataFrame(all_sources)
         df["tier"] = df["relevance_score"].apply(relevance_tier)
 
-        # Filters
         fc1, fc2 = st.columns(2)
         with fc1:
             tier_filter = st.multiselect(
-                "Filter by Relevance Tier",
-                ["🟢 High", "🟡 Mid", "🔴 Low"],
-                default=["🟢 High", "🟡 Mid", "🔴 Low"],
+                "Filter by Relevance Level",
+                ["🥇 1st Level", "🥈 2nd Level", "🥉 3rd Level"],
+                default=["🥇 1st Level", "🥈 2nd Level", "🥉 3rd Level"],
             )
         with fc2:
             source_filter = st.multiselect(
@@ -732,38 +1335,35 @@ with tab_sources:
 
         filtered = df[df["tier"].isin(tier_filter) & df["source"].isin(source_filter)]
 
-        # Summary
         s1, s2, s3, s4 = st.columns(4)
         s1.metric("Total Sources", len(filtered))
-        high_ct = len(filtered[filtered["tier"] == "🟢 High"])
-        mid_ct = len(filtered[filtered["tier"] == "🟡 Mid"])
-        low_ct = len(filtered[filtered["tier"] == "🔴 Low"])
-        s2.markdown(f"<span class='tier-high'>{high_ct}</span> Very Relevant", unsafe_allow_html=True)
-        s3.markdown(f"<span class='tier-mid'>{mid_ct}</span> Mid", unsafe_allow_html=True)
-        s4.markdown(f"<span class='tier-low'>{low_ct}</span> Low", unsafe_allow_html=True)
+        ct_1st = len(filtered[filtered["tier"] == "🥇 1st Level"])
+        ct_2nd = len(filtered[filtered["tier"] == "🥈 2nd Level"])
+        ct_3rd = len(filtered[filtered["tier"] == "🥉 3rd Level"])
+        s2.markdown(f"<span class='tier-1st'>{ct_1st}</span> 1st Level", unsafe_allow_html=True)
+        s3.markdown(f"<span class='tier-2nd'>{ct_2nd}</span> 2nd Level", unsafe_allow_html=True)
+        s4.markdown(f"<span class='tier-3rd'>{ct_3rd}</span> 3rd Level", unsafe_allow_html=True)
 
-        # Charts
         ch1, ch2 = st.columns(2)
         with ch1:
             tier_df = filtered["tier"].value_counts().reset_index()
             tier_df.columns = ["Tier", "Count"]
             fig = px.pie(tier_df, values="Count", names="Tier",
-                        color="Tier", color_discrete_map=TIER_COLORS, hole=0.4)
+                         color="Tier", color_discrete_map=TIER_COLORS, hole=0.4)
             fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                            font_color="#e0e4f0", height=300)
+                              font_color="#e0e4f0", height=300)
             st.plotly_chart(fig, use_container_width=True)
 
         with ch2:
             if "branch" in filtered.columns and filtered["branch"].notna().any():
                 branch_df = filtered.groupby(["branch", "tier"]).size().reset_index(name="count")
                 fig = px.bar(branch_df, x="branch", y="count", color="tier",
-                            color_discrete_map=TIER_COLORS, barmode="group")
+                             color_discrete_map=TIER_COLORS, barmode="group")
                 fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                font_color="#e0e4f0", height=300,
-                                xaxis_title="Branch", yaxis_title="Count")
+                                  font_color="#e0e4f0", height=300,
+                                  xaxis_title="Branch", yaxis_title="Count")
                 st.plotly_chart(fig, use_container_width=True)
 
-        # Table
         display_cols = ["title", "year", "branch", "relevance_score", "tier", "venue", "source"]
         avail = [c for c in display_cols if c in filtered.columns]
         st.dataframe(
@@ -773,81 +1373,106 @@ with tab_sources:
                 "relevance_score": st.column_config.ProgressColumn(
                     "Relevance", min_value=0, max_value=1, format="%.0%%"
                 ),
-                "url": st.column_config.LinkColumn("URL"),
             }
         )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# TAB 3 — MOLECULES
+# TAB 4 — LAST MOLECULES ADDED (by category)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 with tab_molecules:
-    st.header("🧬 Molecules Discovered")
+    st.header("🧬 Last Molecules Added")
+    st.caption("Recently discovered molecules grouped by chemical category")
 
-    # Combine Airtable + session molecules
-    all_mols = {}
+    # Gather session molecules (most recent first)
+    session_mols = list(st.session_state.molecules_found.values())
 
-    for rec in molecules_raw:
-        f = rec.get("fields", {})
-        name = f.get("Name", "")
-        if name:
-            all_mols[name] = {
-                "name": name,
-                "type": f.get("type", ""),
-                "role": f.get("role", ""),
-                "sensory": f.get("smell", "") or f.get("sensory", ""),
-                "source": "Airtable",
-            }
-
-    for name, mol in st.session_state.molecules_found.items():
-        if name not in all_mols:
-            all_mols[name] = {**mol, "source": "Pipeline Session"}
-
-    if not all_mols:
+    if not session_mols and not molecules_raw:
         st.info("No molecules yet. Run the pipeline to extract compounds.")
     else:
-        mol_df = pd.DataFrame(all_mols.values())
+        # Show session molecules grouped by primary chemistry category
+        if session_mols:
+            st.markdown("### 🆕 Discovered This Session")
 
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Total Molecules", len(mol_df))
-        m2.metric("From Airtable", len([m for m in all_mols.values() if m.get("source") == "Airtable"]))
-        m3.metric("New (this session)", len([m for m in all_mols.values() if m.get("source") == "Pipeline Session"]))
+            m1, m2 = st.columns(2)
+            m1.metric("New Molecules", len(session_mols))
+            unique_cats = set(mol.get("primary", get_primary_category(mol.get("type", "other"))) for mol in session_mols)
+            m2.metric("Categories Found", len(unique_cats))
 
-        # Molecule chips visualization
-        st.markdown("#### All Compounds")
-        chips_html = " ".join(
-            f'<span class="mol-chip">{name}</span>'
-            for name in sorted(all_mols.keys())
-        )
-        st.markdown(chips_html, unsafe_allow_html=True)
+            # Group by primary category
+            by_primary = {}
+            for mol in session_mols:
+                cat = mol.get("primary", get_primary_category(mol.get("type", "other")))
+                if cat not in by_primary:
+                    by_primary[cat] = []
+                by_primary[cat].append(mol)
 
-        st.divider()
+            # Display in hierarchy order: broad categories first
+            cat_icons = {
+                "Amino Acids": "🧬", "Fats": "🫧", "Sugars": "🍬",
+                "Proteins": "🥩", "Alcohols": "🧪",
+                "Aldehydes": "⚗️", "Ketones": "🔬", "Furanones": "🍮",
+                "Pyrazines": "🔥", "Nucleotides": "🧫", "Vitamins": "💊",
+                "Other": "📦",
+            }
 
-        # Charts
-        if "type" in mol_df.columns:
-            c1, c2 = st.columns(2)
-            with c1:
-                type_counts = mol_df["type"].value_counts().reset_index()
-                type_counts.columns = ["Type", "Count"]
-                fig = px.bar(type_counts, x="Type", y="Count", color="Type")
+            for cat in CATEGORY_DISPLAY_ORDER:
+                if cat not in by_primary:
+                    continue
+                mols = by_primary[cat]
+                icon = cat_icons.get(cat, "⚗️")
+                st.markdown(f'<div class="mol-category-header">{icon} {cat.upper()} ({len(mols)})</div>',
+                            unsafe_allow_html=True)
+                for mol in mols:
+                    sensory = mol.get("sensory", "")
+                    role = mol.get("role", "")
+                    conf = mol.get("confidence", 0)
+                    kw = mol.get("from_keyword", "")
+                    subtype = mol.get("type", "")
+
+                    sensory_text = f" — {sensory}" if sensory else ""
+                    subtype_text = f" <span style='color:#8b92a8; font-size:0.75rem'>({subtype})</span>" if subtype else ""
+                    st.markdown(f"""
+<div style="background:#1a1d27; border:1px solid #2d3350; border-radius:8px;
+            padding:10px 14px; margin-bottom:6px; border-left:3px solid #2ecc71;">
+  <strong style="color:#7ee8b0">{mol['name']}</strong>{subtype_text}
+  <span style="color:#c4c8d4; font-size:0.85rem;">{sensory_text}</span>
+  <div style="color:#a0a4b0; font-size:0.8rem; margin-top:3px;">
+    Role: <strong style="color:#c4c8d4">{role}</strong> &nbsp;·&nbsp;
+    Confidence: <strong style="color:#c4c8d4">{conf:.0%}</strong>
+    {f' &nbsp;·&nbsp; From: <em>{kw[:30]}</em>' if kw else ''}
+  </div>
+</div>
+                    """, unsafe_allow_html=True)
+
+        # Show Airtable molecules summary
+        if molecules_raw:
+            st.divider()
+            st.markdown("### 📦 In Airtable Database")
+            st.metric("Total in Airtable", len(molecules_raw))
+
+            # Group by type if available
+            at_by_type = {}
+            for rec in molecules_raw:
+                f = rec.get("fields", {})
+                t = f.get("type", "other") or "other"
+                if t not in at_by_type:
+                    at_by_type[t] = 0
+                at_by_type[t] += 1
+
+            if at_by_type:
+                type_df = pd.DataFrame([
+                    {"Category": k, "Count": v} for k, v in sorted(at_by_type.items(), key=lambda x: -x[1])
+                ])
+                fig = px.bar(type_df, x="Category", y="Count", color="Category")
                 fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                font_color="#e0e4f0", showlegend=False, height=300)
+                                  font_color="#e0e4f0", showlegend=False, height=250)
                 st.plotly_chart(fig, use_container_width=True)
-            with c2:
-                if "role" in mol_df.columns:
-                    role_counts = mol_df["role"].value_counts().reset_index()
-                    role_counts.columns = ["Role", "Count"]
-                    fig = px.pie(role_counts, values="Count", names="Role", hole=0.35)
-                    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                    font_color="#e0e4f0", height=300)
-                    st.plotly_chart(fig, use_container_width=True)
-
-        st.dataframe(mol_df, use_container_width=True, height=300, hide_index=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# TAB 4 — CLAIMS FEED
+# TAB 5 — CLAIMS FEED
 # ═══════════════════════════════════════════════════════════════════════════════
 
 with tab_claims:
@@ -864,27 +1489,92 @@ with tab_claims:
         for i, claim in enumerate(claims):
             st.markdown(f"""
 <div class="claim-chip" style="display:block; margin-bottom:8px;">
-  <strong>Claim {i+1}:</strong> {claim}
+  <strong style="color:#a9c4f5">Claim {i+1}:</strong>
+  <span style="color:#e0e4f0">{claim}</span>
 </div>
             """, unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# TAB 5 — KEYWORDS BRAIN
+# TAB 6 — KEYWORDS BRAIN (with public keyword submission)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 with tab_keywords:
     st.header("🧠 Keywords Brain")
-    st.caption("The keyword bible that drives the pipeline — grows as new terms are discovered")
+    st.caption("The keyword bible that drives the pipeline — anyone can contribute new keywords")
 
-    # Show all keywords with priority and branch
-    st.markdown("#### Keyword Bible")
+    # ---- PUBLIC KEYWORD SUBMISSION ----
+    st.markdown("#### ➕ Suggest a New Keyword")
+    st.markdown(f"Submitting as **{st.session_state.user_name}** ({st.session_state.user_email})")
 
-    for kw in KEYWORDS_BIBLE:
+    with st.form("keyword_submission", clear_on_submit=True):
+        kw_col1, kw_col2 = st.columns([3, 1])
+        with kw_col1:
+            new_keyword = st.text_input("Keyword phrase", placeholder="e.g., vanillin formation lignin degradation")
+        with kw_col2:
+            new_branch = st.selectbox("Branch", MOCK_BRANCHES + ["Other"])
+
+        new_priority = st.selectbox("Priority suggestion", ["MEDIUM", "HIGH", "LOW"])
+
+        submitted = st.form_submit_button("🚀 Submit Keyword", type="primary", use_container_width=True)
+
+        if submitted and new_keyword.strip():
+            new_entry = {
+                "keyword": new_keyword.strip(),
+                "branch": new_branch,
+                "priority": new_priority,
+                "added_by": st.session_state.user_name,
+                "added_email": st.session_state.user_email,
+                "added_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            }
+
+            # Check for duplicates
+            existing_kws = [kw["keyword"].lower() for kw in KEYWORDS_BIBLE]
+            if new_keyword.strip().lower() in existing_kws:
+                st.warning("This keyword already exists in the bible.")
+            else:
+                KEYWORDS_BIBLE.append(new_entry)
+                save_keywords_to_file(KEYWORDS_BIBLE)
+                st.session_state.user_keywords.append(new_entry)
+                st.success(f"✅ Keyword added by {st.session_state.user_name}! It will be used in the next pipeline run.")
+                st.rerun()
+        elif submitted:
+            st.warning("Please enter a keyword phrase.")
+
+    st.divider()
+
+    # ---- KEYWORD BIBLE ----
+    st.markdown("#### 📖 Keyword Bible")
+
+    # Separate system vs user-added
+    system_kws = [kw for kw in KEYWORDS_BIBLE if kw.get("added_by", "system") == "system"]
+    user_kws = [kw for kw in KEYWORDS_BIBLE if kw.get("added_by", "system") != "system"]
+
+    if user_kws:
+        st.markdown(f"**👥 Community Contributed ({len(user_kws)})**")
+        for kw in user_kws:
+            used = kw["keyword"] in st.session_state.keywords_used
+            priority_color = {"HIGH": "#2ecc71", "MEDIUM": "#f39c12", "LOW": "#a0a4b0"}.get(kw.get("priority", ""), "#a0a4b0")
+            status_icon = "✅" if used else "⬜"
+            author = kw.get("added_by", "unknown")
+            added_date = kw.get("added_date", "")
+            st.markdown(f"""
+<div class="kw-attributed" style="display:block; margin-bottom:6px;
+     {'border-color: rgba(46,204,113,0.5); background: rgba(46,204,113,0.08);' if used else ''}">
+  {status_icon} &nbsp;
+  <strong>{kw['keyword']}</strong>
+  &nbsp;→&nbsp; {kw.get('branch','')}
+  &nbsp;
+  <span style="color:{priority_color}; font-size:0.75rem">● {kw.get('priority','')}</span>
+  <span class="kw-author">&nbsp;— added by <strong>{author}</strong> {added_date}</span>
+</div>
+            """, unsafe_allow_html=True)
+        st.divider()
+
+    st.markdown(f"**⚙️ System Keywords ({len(system_kws)})**")
+    for kw in system_kws:
         used = kw["keyword"] in st.session_state.keywords_used
-        priority_color = {
-            "HIGH": "#2ecc71", "MEDIUM": "#f39c12", "LOW": "#888"
-        }.get(kw.get("priority", ""), "#888")
+        priority_color = {"HIGH": "#2ecc71", "MEDIUM": "#f39c12", "LOW": "#a0a4b0"}.get(kw.get("priority", ""), "#a0a4b0")
         status_icon = "✅" if used else "⬜"
         st.markdown(f"""
 <div class="kw-chip" style="display:block; margin-bottom:6px;
@@ -899,7 +1589,7 @@ with tab_keywords:
 
     st.divider()
 
-    # Show unique terms extracted from all processed papers
+    # Terms discovered this session
     if st.session_state.pipeline_results:
         st.markdown("#### 🔬 Terms Discovered This Session")
         all_terms = set()
@@ -913,5 +1603,106 @@ with tab_keywords:
             f'<span class="kw-chip">{t}</span>' for t in sorted(all_terms) if t
         )
         st.markdown(terms_html, unsafe_allow_html=True)
-
         st.metric("Unique Terms", len(all_terms))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TAB 7 — COMMUNITY (Leaderboard, Flags, Feedback)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+with tab_community:
+    st.header("🏆 Community Hub")
+    st.caption(
+        "Every user makes the database smarter. "
+        "See who's contributing the most and what the community is discovering."
+    )
+
+    # ---- LEADERBOARD ----
+    st.markdown("#### 🥇 Contributor Leaderboard")
+
+    stats = st.session_state.contributor_stats
+    if not stats:
+        st.info("No contributions yet this session. Run the pipeline, flag interesting papers, or add keywords to appear here!")
+    else:
+        # Build leaderboard data
+        leaderboard = []
+        for email, data in stats.items():
+            score = data.get("runs", 0) * 3 + data.get("flags", 0) * 2 + data.get("keywords", 0) * 1
+            leaderboard.append({
+                "name": data.get("name", "Anonymous"),
+                "runs": data.get("runs", 0),
+                "flags": data.get("flags", 0),
+                "keywords": data.get("keywords", 0),
+                "score": score,
+            })
+        leaderboard.sort(key=lambda x: -x["score"])
+
+        medals = ["🥇", "🥈", "🥉"]
+        for i, entry in enumerate(leaderboard[:10]):
+            medal = medals[i] if i < 3 else f"#{i+1}"
+            st.markdown(f"""
+<div class="session-card" style="display:flex; align-items:center; justify-content:space-between;">
+  <div>
+    <span style="font-size:1.4rem">{medal}</span> &nbsp;
+    <strong style="color:#f0f2f6; font-size:1.1rem">{entry['name']}</strong>
+  </div>
+  <div style="text-align:right; color:#c4c8d4; font-size:0.85rem;">
+    🚀 {entry['runs']} runs &nbsp;·&nbsp;
+    🚩 {entry['flags']} flags &nbsp;·&nbsp;
+    🔑 {entry['keywords']} keywords &nbsp;·&nbsp;
+    <strong style="color:#f39c12">Score: {entry['score']}</strong>
+  </div>
+</div>
+            """, unsafe_allow_html=True)
+
+    st.divider()
+
+    # ---- FLAGGED ITEMS ----
+    st.markdown("#### 🚩 Flagged for Daniel's Attention")
+
+    flagged = st.session_state.flagged_items
+    if not flagged:
+        st.info("No items flagged yet. Use the 🚩 button on pipeline results to flag interesting findings for Daniel.")
+    else:
+        st.metric("Total Flagged", len(flagged))
+        for item in flagged[:15]:
+            tier = relevance_tier(item.get("relevance_score", 0))
+            st.markdown(f"""
+<div class="review-card" style="border-left: 4px solid #f39c12;">
+  🚩 <strong>{item.get('title','')[:80]}</strong>
+  {score_badge_html(item.get('relevance_score'))} &nbsp; {tier}
+  <div class="review-meta">
+    Flagged by <strong>{item.get('flagged_by','')}</strong> ·
+    {item.get('flagged_at','')[:16]}
+  </div>
+</div>
+            """, unsafe_allow_html=True)
+
+    st.divider()
+
+    # ---- RUN FEEDBACK ----
+    st.markdown("#### 💬 Run Feedback from the Team")
+
+    feedback = st.session_state.run_feedback
+    if not feedback:
+        st.info("No feedback submitted yet. After a pipeline run, users can share what they learned.")
+    else:
+        for fb in reversed(feedback[:10]):
+            rating_color = {
+                "Excellent": "#2ecc71", "Very useful": "#27ae60",
+                "Useful": "#f39c12", "Somewhat": "#e67e22",
+                "Not useful": "#e74c3c",
+            }.get(fb.get("rating", ""), "#f39c12")
+            st.markdown(f"""
+<div class="session-card">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <strong style="color:#f0f2f6">{fb.get('user','')}</strong>
+    <span style="color:{rating_color}; font-weight:600">{fb.get('rating','')}</span>
+  </div>
+  <div style="color:#c4c8d4; margin-top:6px;">{fb.get('learned','')}</div>
+  <div style="color:#8b92a8; font-size:0.75rem; margin-top:4px;">
+    {fb.get('date','')} · {fb.get('papers_processed',0)} papers ·
+    Keywords: {', '.join(fb.get('keywords',[])[:3])}
+  </div>
+</div>
+            """, unsafe_allow_html=True)
