@@ -25,6 +25,27 @@ import requests
 import anthropic
 from dotenv import load_dotenv
 
+# ── Layer C (typed extraction) + Layer E (SQLite store) integration ──────────
+# Set USE_LAYER_C=1 and USE_LAYER_E=1 in .env to activate
+# Falls back to raw claude_extract() if not enabled or if imports fail
+_USE_LAYER_C = False
+_USE_LAYER_E = False
+_store = None
+
+try:
+    from layer_c_schemas import extract as layer_c_extract, EXTRACTION_VERSION
+    _USE_LAYER_C = os.environ.get("USE_LAYER_C", "1").strip() == "1"
+except ImportError:
+    layer_c_extract = None
+    EXTRACTION_VERSION = 1
+
+try:
+    from layer_e_store import Store, mock_extract
+    _USE_LAYER_E = os.environ.get("USE_LAYER_E", "1").strip() == "1"
+except ImportError:
+    Store = None
+    mock_extract = None
+
 # Always resolve .env relative to this file, not the caller's CWD.
 # override=True ensures the file values win even if the shell has stale/empty env vars.
 load_dotenv(Path(__file__).parent / ".env", override=True)
@@ -744,7 +765,7 @@ def at_push_connections(connections, dry_run):
 # WORKER
 # ─────────────────────────────────────────────────────────────────────────────
 
-def worker(kw_entry, db, state, dry_run):
+def worker(kw_entry, db, state, dry_run, use_mock=False):
     keyword = kw_entry["keyword"]
     branch  = kw_entry.get("branch","")
     label   = f"{db}::{keyword[:35]}"
@@ -752,16 +773,44 @@ def worker(kw_entry, db, state, dry_run):
 
     raw      = FETCHERS[db](keyword, state, branch)
     enriched = []
+    cache_hits = 0
+
     for paper in raw:
-        extracted = claude_extract(paper)
+        # ── Layer E cache check: skip Claude call if already extracted ────
+        if _USE_LAYER_E and _store:
+            if _store.check_cache(paper["id"], extraction_version=EXTRACTION_VERSION):
+                cache_hits += 1
+                with _seen_lock:
+                    state["seen_dois"].add(paper["id"])
+                continue
+
+        # ── Extraction: mock / Layer C (typed) / legacy claude_extract ────
+        if use_mock and mock_extract:
+            extracted = mock_extract(paper)
+        elif _USE_LAYER_C and layer_c_extract:
+            extracted = layer_c_extract(paper)
+        else:
+            extracted = claude_extract(paper)
+
         with _seen_lock:
             state["seen_dois"].add(paper["id"])
+
+        # ── Layer E store: persist to SQLite before Airtable ─────────────
+        if _USE_LAYER_E and _store:
+            try:
+                _store.write(extracted)
+            except Exception as e:
+                log.warning("Layer E write failed for '%s': %s",
+                           paper.get("title","")[:40], e)
+
         if extracted.get("relevant"):
             enriched.append(extracted)
             log.info("  ✓ [%.2f] %s", extracted.get("relevance_score",0),
                      paper.get("title","")[:55])
 
-    log.info("◀ %s → %d/%d relevant", label, len(enriched), len(raw))
+    if cache_hits:
+        log.info("  ⚡ %d cache hits (skipped Claude calls)", cache_hits)
+    log.info("◀ %s → %d/%d relevant (%d cached)", label, len(enriched), len(raw), cache_hits)
     return enriched
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -769,7 +818,16 @@ def worker(kw_entry, db, state, dry_run):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run(keywords_path="keywords_bible.json", dry_run=False,
-        workers=WORKERS, databases=None, output_json="pipeline_output.json"):
+        workers=WORKERS, databases=None, output_json="pipeline_output.json",
+        use_mock=False):
+    """
+    Main orchestrator.
+
+    Args:
+        use_mock: If True, use Layer E's mock_extract() instead of Claude API.
+                  Allows full pipeline testing with zero API cost.
+    """
+    global _store, _USE_LAYER_C
 
     if databases is None:
         databases = ALL_DBS
@@ -777,8 +835,25 @@ def run(keywords_path="keywords_bible.json", dry_run=False,
         log.warning("SERPAPI_KEY not set — skipping Google Scholar")
         databases = [d for d in databases if d != "serpapi"]
 
-    log.info("Testing Claude API connection...")
-    test_claude_connection()
+    # ── Initialize Layer E store ─────────────────────────────────────────────
+    if _USE_LAYER_E and Store:
+        _store = Store()
+        log.info("Layer E store initialized: %s", _store.db_path)
+    else:
+        log.info("Layer E store: DISABLED (set USE_LAYER_E=1 to enable)")
+
+    # ── Mock mode: use Layer E mock extraction, skip Claude entirely ─────────
+    if use_mock:
+        if mock_extract:
+            log.info("MOCK MODE — using mock_extract(), no API calls")
+            _USE_LAYER_C = False  # override: don't use real Layer C
+        else:
+            log.warning("mock_extract not available — falling back to Claude")
+            use_mock = False
+
+    if not use_mock:
+        log.info("Testing Claude API connection...")
+        test_claude_connection()
 
     state    = load_state()
     keywords = load_keywords(keywords_path)
@@ -795,7 +870,7 @@ def run(keywords_path="keywords_bible.json", dry_run=False,
     all_records = []
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(worker, kw, db, state, dry_run): (kw["keyword"], db)
+        futures = {pool.submit(worker, kw, db, state, dry_run, use_mock): (kw["keyword"], db)
                    for kw, db in work}
         for fut in as_completed(futures):
             kw_name, db_name = futures[fut]
@@ -829,6 +904,26 @@ def run(keywords_path="keywords_bible.json", dry_run=False,
                            "last_connections": len(connections)})
     save_state(state)
 
+    # ── Layer E run logging ──────────────────────────────────────────────────
+    if _USE_LAYER_E and _store:
+        promoted = len([r for r in all_records
+                       if r.get("relevance_score", 0) >= 0.70])
+        queued   = len([r for r in all_records
+                       if 0.50 <= r.get("relevance_score", 0) < 0.70])
+        held     = len([r for r in all_records
+                       if r.get("relevance_score", 0) < 0.50])
+        _store.log_run(
+            sources_fetched=len(all_records),
+            sources_extracted=len(all_records),
+            cache_hits=0,
+            promoted=promoted,
+            queued=queued,
+            held=held,
+            notes=f"dbs={databases}, dry={dry_run}, mock={use_mock}"
+        )
+        log.info("Layer E run logged — promoted=%d queued=%d held=%d",
+                promoted, queued, held)
+
     log.info("="*60)
     log.info("PIPELINE COMPLETE — %d records | %d connections pushed",
              len(all_records), min(len(connections), MAX_CONNS))
@@ -840,9 +935,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flavor Intelligence Pipeline v2")
     parser.add_argument("--keywords",  default="keywords_bible.json")
     parser.add_argument("--dry-run",   action="store_true")
+    parser.add_argument("--mock",      action="store_true", help="Use mock extraction (no API)")
     parser.add_argument("--workers",   type=int, default=WORKERS)
     parser.add_argument("--databases", nargs="+", choices=ALL_DBS, default=ALL_DBS)
     parser.add_argument("--output",    default="pipeline_output.json")
     args = parser.parse_args()
     run(keywords_path=args.keywords, dry_run=args.dry_run,
-        workers=args.workers, databases=args.databases, output_json=args.output)
+        workers=args.workers, databases=args.databases,
+        output_json=args.output, use_mock=args.mock)

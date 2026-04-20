@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GFI Flavor &amp; Aroma Initiative — Expert Network Map</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0e1117;color:#d4d4d4;font-family:'DM Mono',monospace}
+/* --- Entrance Screen --- */
+#entrance{position:fixed;inset:0;z-index:1000;background:#0e1117;display:flex;align-items:center;justify-content:center;transition:opacity .8s ease,transform .8s ease}
+#entrance.hide{opacity:0;pointer-events:none;transform:scale(1.04)}
+.entrance-card{max-width:560px;width:90%;padding:48px 40px;border:1px solid rgba(232,168,78,.18);border-radius:14px;background:rgba(18,20,28,.95);box-shadow:0 0 60px rgba(232,168,78,.06)}
+.entrance-card h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:#e8a84e;margin-bottom:6px;letter-spacing:.3px}
+.entrance-card .subtitle{font-size:12px;color:#8a8a9a;margin-bottom:32px;line-height:1.5}
+.q-block{margin-bottom:24px}
+.q-block label{display:block;font-size:12px;color:#a09db0;margin-bottom:8px;letter-spacing:.4px;text-transform:uppercase}
+.q-block select,.q-block input{width:100%;padding:10px 14px;background:#181b24;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:#d4d4d4;font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color .25s}
+.q-block select:focus,.q-block input:focus{border-color:rgba(232,168,78,.45)}
+.q-block select option{background:#181b24}
+.enter-btn{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:12px 32px;background:linear-gradient(135deg,#e8a84e,#d4943e);border:none;border-radius:8px;color:#0e1117;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;letter-spacing:.4px;transition:transform .2s,box-shadow .2s}
+.enter-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(232,168,78,.3)}
+/* --- Canvas & Main UI --- */
+#mainUI{display:none;width:100%;height:100%;position:relative}
+canvas{display:block;width:100%;height:100%}
+/* --- Detail Panel --- */
+#detailPanel{position:fixed;top:0;right:-440px;width:420px;height:100%;background:rgba(14,17,23,.97);border-left:1px solid rgba(255,255,255,.06);z-index:500;transition:right .4s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:32px 28px 40px;backdrop-filter:blur(12px)}
+#detailPanel.open{right:0}
+#detailPanel .close-btn{position:absolute;top:16px;right:18px;background:none;border:none;color:#8a8a9a;font-size:20px;cursor:pointer;transition:color .2s}
+#detailPanel .close-btn:hover{color:#e8a84e}
+#detailPanel .dp-field-tag{display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:12px}
+#detailPanel h2{font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:4px}
+#detailPanel .dp-affil{font-size:12px;color:#8a8a9a;margin-bottom:18px}
+#detailPanel .dp-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+#detailPanel .dp-meta-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:10px;text-align:center}
+#detailPanel .dp-meta-item .val{font-size:18px;font-weight:500;color:#fff}
+#detailPanel .dp-meta-item .lbl{font-size:10px;color:#6a6a7a;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+#detailPanel .dp-section{margin-top:20px}
+#detailPanel .dp-section h3{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#8a8a9a;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.06)}
+#detailPanel .dp-research{font-size:12.5px;line-height:1.6;color:#b0aec0}
+#detailPanel .dp-tags{display:flex;flex-wrap:wrap;gap:6px}
+#detailPanel .dp-tags span{padding:3px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:4px;font-size:10.5px;color:#9a98aa}
+#detailPanel .dp-coauth-item{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:8px;cursor:pointer;transition:background .2s,border-color .2s}
+#detailPanel .dp-coauth-item:hover{background:rgba(232,168,78,.06);border-color:rgba(232,168,78,.2)}
+.dp-coauth-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dp-coauth-name{font-size:12px;color:#d4d4d4}
+.dp-coauth-field{font-size:10px;color:#6a6a7a;margin-left:auto}
+.dp-coauth-type{font-size:9.5px;padding:2px 7px;border-radius:3px;background:rgba(232,168,78,.1);color:#e8a84e;margin-left:6px}
+.dp-status{display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;letter-spacing:.3px}
+.dp-status.shortlisted{background:rgba(232,168,78,.12);color:#e8a84e}
+.dp-status.auto{background:rgba(109,196,168,.1);color:#6dc4a8}
+/* --- Stats Overlay --- */
+#statsPanel{position:fixed;bottom:20px;left:20px;z-index:400;background:rgba(14,17,23,.92);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:16px 20px;backdrop-filter:blur(10px);min-width:200px}
+#statsPanel h4{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:#e8a84e;margin-bottom:10px;font-weight:400}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0}
+.stat-row .stat-label{font-size:11px;color:#6a6a7a}
+.stat-row .stat-val{font-size:13px;color:#d4d4d4;font-weight:500}
+/* --- Legend Overlay --- */
+#legendPanel{position:fixed;top:20px;left:20px;z-index:400;background:rgba(14,17,23,.92);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px 18px;backdrop-filter:blur(10px)}
+#legendPanel h4{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:#e8a84e;margin-bottom:8px;font-weight:400}
+.legend-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.legend-label{font-size:11px;color:#8a8a9a}
+/* --- Title Bar --- */
+#titleBar{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:400;text-align:center}
+#titleBar h1{font-family:'Playfair Display',serif;font-size:18px;color:#e8a84e;font-weight:600;letter-spacing:.3px}
+#titleBar p{font-size:10.5px;color:#6a6a7a;margin-top:2px}
+/* --- Tooltip --- */
+#tooltip{position:fixed;z-index:600;background:rgba(14,17,23,.95);border:1px solid rgba(232,168,78,.2);border-radius:8px;padding:10px 14px;pointer-events:none;opacity:0;transition:opacity .2s;font-size:11px;color:#d4d4d4;max-width:260px;line-height:1.5;backdrop-filter:blur(8px)}
+#tooltip.show{opacity:1}
+/* --- Gap Cloud Panel --- */
+#gapPanel{position:fixed;bottom:20px;right:20px;z-index:400;background:rgba(14,17,23,.92);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:0;backdrop-filter:blur(10px);max-width:320px;overflow:hidden;max-height:0;opacity:0;transition:max-height .4s ease,opacity .3s,padding .3s}
+#gapPanel.open{max-height:400px;opacity:1;padding:18px 20px}
+#gapPanel h4{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:#e8a84e;margin-bottom:8px;font-weight:400}
+#gapPanel .gap-title{font-family:'Playfair Display',serif;font-size:15px;color:#fff;margin-bottom:4px}
+#gapPanel .gap-desc{font-size:11.5px;color:#9a98aa;line-height:1.6;margin-bottom:10px}
+#gapPanel .gap-urgency{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px}
+#gapPanel .gap-urgency.high{background:rgba(224,112,112,.15);color:#e07070}
+#gapPanel .gap-urgency.med{background:rgba(232,168,78,.12);color:#e8a84e}
+.gap-subtopics{list-style:none;margin-bottom:10px}
+.gap-subtopics li{font-size:11px;color:#7a7a8a;padding:2px 0}
+.gap-subtopics li::before{content:'- ';color:#e8a84e}
+.gap-scientists span{display:inline-block;padding:2px 8px;margin:2px 4px 2px 0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:4px;font-size:10px;color:#aaa}
+#gapPanel .close-gap{position:absolute;top:10px;right:12px;background:none;border:none;color:#6a6a7a;font-size:16px;cursor:pointer}
+</style>
+</head>
+<body>
+<!-- Entrance Screen -->
+<div id="entrance">
+  <div class="entrance-card">
+    <h1>Expert Network Map</h1>
+    <p class="subtitle">GFI Flavor &amp; Aroma Initiative &mdash; Interactive research landscape<br>mapping 17 experts across 5 fields with co-authorship connections</p>
+    <div class="q-block">
+      <label>What is your primary interest area?</label>
+      <select id="q1">
+        <option value="">Select a research focus...</option>
+        <option value="maillard">Maillard Reaction Chemistry</option>
+        <option value="lipid">Lipid Oxidation Pathways</option>
+        <option value="volatile">Volatile Compound Analysis</option>
+        <option value="matrix">Matrix Effects &amp; Extrusion</option>
+        <option value="sensory">Sensory Science &amp; Perception</option>
+        <option value="all">All Fields (Overview)</option>
+      </select>
+    </div>
+    <div class="q-block">
+      <label>What outcome are you aiming for?</label>
+      <select id="q2">
+        <option value="">Select a goal...</option>
+        <option value="gaps">Identify knowledge gaps</option>
+        <option value="experts">Find top experts to engage</option>
+        <option value="network">Explore collaboration networks</option>
+        <option value="overview">General landscape overview</option>
+      </select>
+    </div>
+    <button class="enter-btn" id="enterBtn">Enter Network Map <span style="font-size:16px">&#8594;</span></button>
+  </div>
+</div>
+
+<!-- Main UI -->
+<div id="mainUI">
+  <canvas id="mapCanvas"></canvas>
+  <div id="titleBar">
+    <h1>GFI Flavor &amp; Aroma &mdash; Expert Network</h1>
+    <p>17 experts &middot; 5 research fields &middot; co-authorship network</p>
+  </div>
+  <div id="legendPanel">
+    <h4>Research Fields</h4>
+  </div>
+  <div id="statsPanel">
+    <h4>Network Statistics</h4>
+  </div>
+  <div id="tooltip"></div>
+  <div id="detailPanel">
+    <button class="close-btn" id="closeDetail">&times;</button>
+    <div id="detailContent"></div>
+  </div>
+  <div id="gapPanel">
+    <button class="close-gap" id="closeGap">&times;</button>
+    <div id="gapContent"></div>
+  </div>
+</div>
+
+<script>
+// === DATA ===
+const FIELDS = {
+  maillard:{ color:'#e8a84e', label:'Maillard\nReaction', short:'Maillard Reaction', desc:'Amino acid-sugar reactions generating process meat aroma during cooking' },
+  lipid:   { color:'#6dc4a8', label:'Lipid\nOxidation', short:'Lipid Oxidation', desc:'Fatty acid degradation pathways generating key volatile meat aroma compounds' },
+  volatile:{ color:'#a08de0', label:'Volatile\nAnalysis', short:'Volatile Analysis', desc:'GC-MS / GC-O identification and quantification of potent meat odorants' },
+  matrix:  { color:'#e07070', label:'Matrix\nEffects', short:'Matrix Effects', desc:'Protein/fat architecture governing precursor release and aroma formation' },
+  sensory: { color:'#70b8e0', label:'Sensory\nScience', short:'Sensory Science', desc:'Consumer perception, psychophysics, and benchmarking of meat analogs' },
+};
+
+const GAPS = [
+  { id:'g1', label:'HME Matrix\nAroma Release', short:'HME Matrix Aroma Release', angle:0.18, urgency:'high',
+    desc:'No mechanistic model for how high-moisture extrusion modifies precursor availability and volatile release kinetics in plant protein matrices.',
+    subtopics:['Fiber-lipid binding','Extrusion temperature effects','Precursor mobility','Water activity role'],
+    linkedFields:['matrix','lipid'],
+    scientists:['Ann Van Loey','Sylvie Chevallier','Nora Selke'] },
+  { id:'g2', label:'Metallic Note\nMechanisms', short:'Metallic Note Mechanisms', angle:1.1, urgency:'high',
+    desc:'The origin of metallic beef aroma - iron, lipid peroxidation, heme compounds - is poorly understood with no validated plant-based replication strategy.',
+    subtopics:['Heme iron catalysis','Trans-2-nonenal pathway','Lipid hydroperoxides','Non-heme iron models'],
+    linkedFields:['lipid','volatile'],
+    scientists:['Fereidoon Shahidi','Herman Zhang','Eric Selin'] },
+  { id:'g3', label:'Peptide-Maillard\nPrecursors', short:'Peptide-Maillard Precursor Cocktails', angle:2.22, urgency:'med',
+    desc:'Hydrolysate peptide fractions as targeted Maillard precursor cocktails for plant-based systems is mechanistically unexplored.',
+    subtopics:['Dipeptide reactivity','Cys-containing peptides','Reducing sugar pairing','Hydrolysate profiling'],
+    linkedFields:['maillard','matrix'],
+    scientists:['Didier Dupont','Vincenzo De Kimpe','Carolyn Meiselman'] },
+  { id:'g4', label:'Cross-Modal\nPerception Gap', short:'Cross-Modal Flavor Perception', angle:3.5, urgency:'med',
+    desc:'How texture cues in plant-based meat alter aroma perception and retronasal release is barely studied.',
+    subtopics:['Chewing mechanics','Retronasal release','Mouthfeel-aroma coupling','Temporal dominance'],
+    linkedFields:['sensory','matrix','volatile'],
+    scientists:['Charles Spence','Heribert Watzke'] },
+];
+
+const SCIENTISTS = [
+  { name:'Carolyn Meiselman', initials:'CM', affil:'USDA-ARS', country:'USA', field:'maillard', score:0.97, hindex:52, papers:210, email:'meiselman@usda.gov', research:'Maillard pathway reaction network modeling in meat systems', tags:['Maillard kinetics','Meat flavor','Heterocyclics'], coauth:['Vincenzo De Kimpe','Fereidoon Shahidi'], status:'Shortlisted' },
+  { name:'Vincenzo De Kimpe', initials:'VDK', affil:'Ghent University', country:'Belgium', field:'maillard', score:0.95, hindex:61, papers:340, email:'v.dekimpe@ugent.be', research:'Mechanistic elucidation of Strecker aldehydes and pyrazine formation', tags:['Strecker degradation','Pyrazines','Carbonyl chemistry'], coauth:['Carolyn Meiselman'], status:'Shortlisted' },
+  { name:'Mendel Friedman', initials:'MF', affil:'USDA Western', country:'USA', field:'maillard', score:0.88, hindex:44, papers:180, email:'mfriedman@ars.usda.gov', research:'Maillard reaction products: chemistry, biology, food safety', tags:['Amino acid reactivity','N-heterocyclics','Safety'], coauth:['Renata Zamora'], status:'Shortlisted' },
+  { name:'Renata Zamora', initials:'RZ', affil:'CSIC - Seville', country:'Spain', field:'maillard', score:0.82, hindex:38, papers:130, email:'rzamora@csic.es', research:'Carbonyl-amine interactions in heterogeneous food matrices', tags:['Advanced glycation','Lipid-protein links','PBM'], coauth:['Mendel Friedman'], status:'Auto-discovered' },
+  { name:'Fereidoon Shahidi', initials:'FS', affil:'Memorial Univ.', country:'Canada', field:'lipid', score:0.98, hindex:75, papers:620, email:'fshahidi@mun.ca', research:'Lipid-derived volatiles and their role in meat and analog flavor', tags:['Lipid oxidation','Aldehydes','Antioxidants'], coauth:['Carolyn Meiselman','Herman Zhang'], status:'Shortlisted' },
+  { name:'Herman Zhang', initials:'HZ', affil:'Zhejiang Univ.', country:'China', field:'lipid', score:0.91, hindex:47, papers:265, email:'hzhang@zju.edu.cn', research:'Phospholipid oxidation products in cooked pork and chicken', tags:['Phospholipids','PUFA oxidation','Radical mechanisms'], coauth:['Fereidoon Shahidi'], status:'Auto-discovered' },
+  { name:'Nora Selke', initials:'NS', affil:'TU Berlin', country:'Germany', field:'lipid', score:0.85, hindex:33, papers:98, email:'n.selke@tu-berlin.de', research:'Plant oil vs animal fat oxidation: implications for meat analogs', tags:['Fat matrix','Rancidity markers','Plant-based fats'], coauth:['Renata Zamora'], status:'Auto-discovered' },
+  { name:'Thomas Hofmann', initials:'TH', affil:'TU Munich', country:'Germany', field:'volatile', score:0.99, hindex:68, papers:410, email:'thomas.hofmann@tum.de', research:'Sensomics approach to decode the complete aroma of cooked beef', tags:['Sensomics','Furanones','Recombination models'], coauth:['Eric Selin','Imre Blank','Peter Schieberle'], status:'Shortlisted' },
+  { name:'Peter Schieberle', initials:'PS', affil:'TU Munich / DFA', country:'Germany', field:'volatile', score:0.97, hindex:63, papers:380, email:'p.schieberle@tum.de', research:'Quantitative aroma reconstitution of cooked meat via AEDA', tags:['AEDA','Thiols','Sulfides'], coauth:['Thomas Hofmann'], status:'Shortlisted' },
+  { name:'Eric Selin', initials:'ES', affil:'Firmenich / EPFL', country:'Switzerland', field:'volatile', score:0.96, hindex:55, papers:190, email:'eric.selin@firmenich.com', research:'Character impact compounds in grilled beef aroma', tags:['GC-Olfactometry','Charm analysis','Potent odorants'], coauth:['Thomas Hofmann','Imre Blank'], status:'Shortlisted' },
+  { name:'Imre Blank', initials:'IB', affil:'Nestle Research', country:'Switzerland', field:'volatile', score:0.90, hindex:42, papers:150, email:'imre.blank@nestle.com', research:'Scaling aroma formation from lab to plant-based meat manufacture', tags:['Industrial flavor','Alt-protein adaptation'], coauth:['Thomas Hofmann','Eric Selin'], status:'Shortlisted' },
+  { name:'Ann Van Loey', initials:'AL', affil:'KU Leuven', country:'Belgium', field:'matrix', score:0.93, hindex:50, papers:230, email:'ann.vanloey@kuleuven.be', research:'Protein network architecture and volatile retention in plant-based meat', tags:['Protein gelation','Matrix engineering','Texture-flavor'], coauth:['Vincenzo De Kimpe'], status:'Shortlisted' },
+  { name:'Sylvie Chevallier', initials:'SC', affil:'INRAE Nantes', country:'France', field:'matrix', score:0.87, hindex:36, papers:115, email:'s.chevallier@inrae.fr', research:'Impact of high-moisture extrusion on flavor compound migration', tags:['Extrusion matrix','HME processing','Fiber-flavor'], coauth:['Ann Van Loey'], status:'Auto-discovered' },
+  { name:'Didier Dupont', initials:'DD', affil:'INRAE Rennes', country:'France', field:'matrix', score:0.84, hindex:39, papers:140, email:'d.dupont@inrae.fr', research:'Peptide release during digestion of structured plant proteins', tags:['Proteolysis','Peptide flavor','In vitro digestion'], coauth:['Sylvie Chevallier','Ann Van Loey'], status:'Auto-discovered' },
+  { name:'Heribert Watzke', initials:'HW', affil:'Nestle / ETH', country:'Switzerland', field:'sensory', score:0.89, hindex:48, papers:175, email:'h.watzke@nestle.com', research:'Multimodal sensory integration: bridging flavor gaps in plant-based meats', tags:['Perception modeling','Mouthfeel','Benchmarking'], coauth:['Imre Blank'], status:'Shortlisted' },
+  { name:'Charles Spence', initials:'CS', affil:'Oxford University', country:'UK', field:'sensory', score:0.85, hindex:57, papers:560, email:'charles.spence@psy.ox.ac.uk', research:'Psychology of meat-eating and plant-based acceptance barriers', tags:['Crossmodal flavor','Consumer psychology','Neophobia'], coauth:[], status:'Shortlisted' },
+  { name:'Mathilde Causse', initials:'MC', affil:'INRAE Avignon', country:'France', field:'sensory', score:0.79, hindex:41, papers:190, email:'m.causse@inrae.fr', research:'Quantitative sensory testing protocols for plant-based meat evaluation', tags:['QST panels','Descriptive analysis'], coauth:[], status:'Auto-discovered' },
+];
+
+// === BUILD CONNECTIONS ===
+const connections = [];
+const connCountMap = {};
+SCIENTISTS.forEach(s => { connCountMap[s.name] = 0; });
+SCIENTISTS.forEach(s => {
+  s.coauth.forEach(cName => {
+    const partner = SCIENTISTS.find(x => x.name === cName);
+    if (!partner) return;
+    const exists = connections.find(c =>
+      (c.a === s.name && c.b === cName) || (c.a === cName && c.b === s.name));
+    if (!exists) {
+      const crossField = s.field !== partner.field;
+      connections.push({ a: s.name, b: cName, crossField, fieldA: s.field, fieldB: partner.field });
+    }
+  });
+});
+connections.forEach(c => {
+  connCountMap[c.a] = (connCountMap[c.a] || 0) + 1;
+  connCountMap[c.b] = (connCountMap[c.b] || 0) + 1;
+});
+const crossFieldCount = connections.filter(c => c.crossField).length;
+
+// === LAYOUT COMPUTATION ===
+const fieldKeys = Object.keys(FIELDS);
+let W, H, cx, cy, dpr;
+const clusterRadius = 0;
+const expertRadius = 22;
+const expertPositions = {};
+const clusterCenters = {};
+const gapPositions = [];
+
+function computeLayout() {
+  W = window.innerWidth; H = window.innerHeight;
+  dpr = window.devicePixelRatio || 1;
+  cx = W / 2; cy = H / 2;
+  const ringR = Math.min(W, H) * 0.32;
+
+  fieldKeys.forEach((fk, i) => {
+    const angle = -Math.PI / 2 + (2 * Math.PI * i) / fieldKeys.length;
+    clusterCenters[fk] = { x: cx + Math.cos(angle) * ringR, y: cy + Math.sin(angle) * ringR, angle };
+  });
+
+  // Position experts around their field cluster center
+  fieldKeys.forEach(fk => {
+    const members = SCIENTISTS.filter(s => s.field === fk);
+    const cc = clusterCenters[fk];
+    const spreadR = Math.min(W, H) * 0.09;
+    members.forEach((s, j) => {
+      const a = (2 * Math.PI * j) / members.length - Math.PI / 2;
+      expertPositions[s.name] = {
+        x: cc.x + Math.cos(a) * spreadR,
+        y: cc.y + Math.sin(a) * spreadR,
+        r: expertRadius
+      };
+    });
+  });
+
+  // Gap cloud positions between linked fields
+  GAPS.forEach((g, i) => {
+    const fields = g.linkedFields;
+    let gx = 0, gy = 0;
+    fields.forEach(fk => { gx += clusterCenters[fk].x; gy += clusterCenters[fk].y; });
+    gx /= fields.length; gy /= fields.length;
+    // Offset toward center slightly
+    gx = gx * 0.7 + cx * 0.3;
+    gy = gy * 0.7 + cy * 0.3;
+    gapPositions[i] = { x: gx, y: gy, w: 110, h: 50 };
+  });
+}
+
+// === CANVAS RENDERING ===
+let canvas, ctx;
+let selectedExpert = null;
+let hoveredExpert = null;
+let hoveredConnection = null;
+let hoveredGap = null;
+let animTime = 0;
+let userInterest = 'all';
+let userGoal = 'overview';
+
+function initCanvas() {
+  canvas = document.getElementById('mapCanvas');
+  ctx = canvas.getContext('2d');
+  resize();
+  window.addEventListener('resize', resize);
+}
+
+function resize() {
+  computeLayout();
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+
+function drawConnectionLines(time) {
+  connections.forEach(c => {
+    const posA = expertPositions[c.a];
+    const posB = expertPositions[c.b];
+    if (!posA || !posB) return;
+
+    const isHighlighted = selectedExpert &&
+      (selectedExpert.name === c.a || selectedExpert.name === c.b);
+    const isHovered = hoveredConnection === c;
+
+    let alpha = c.crossField ? 0.22 : 0.12;
+    let lineW = c.crossField ? 1.8 : 1.0;
+
+    if (selectedExpert) {
+      alpha = isHighlighted ? 0.65 : 0.04;
+      lineW = isHighlighted ? (c.crossField ? 3 : 2) : 0.5;
+    }
+    if (isHovered) { alpha = 0.8; lineW = 3; }
+
+    // Animated dash offset
+    const dashOffset = time * 0.02;
+
+    // Color: blend the two field colors for cross-field, single color for same-field
+    let color;
+    if (c.crossField) {
+      const rgbA = hexToRgb(FIELDS[c.fieldA].color);
+      const rgbB = hexToRgb(FIELDS[c.fieldB].color);
+      color = `rgba(${(rgbA[0]+rgbB[0])>>1},${(rgbA[1]+rgbB[1])>>1},${(rgbA[2]+rgbB[2])>>1},${alpha})`;
+    } else {
+      const rgb = hexToRgb(FIELDS[c.fieldA].color);
+      color = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
+    }
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineW;
+    if (!isHighlighted && !isHovered) {
+      ctx.setLineDash([6, 4]);
+      ctx.lineDashOffset = dashOffset;
+    }
+    ctx.beginPath();
+    // Curved line for cross-field connections
+    if (c.crossField) {
+      const mx = (posA.x + posB.x) / 2;
+      const my = (posA.y + posB.y) / 2;
+      const dx = posB.x - posA.x;
+      const dy = posB.y - posA.y;
+      const cpx = mx + dy * 0.15;
+      const cpy = my - dx * 0.15;
+      ctx.moveTo(posA.x, posA.y);
+      ctx.quadraticCurveTo(cpx, cpy, posB.x, posB.y);
+    } else {
+      ctx.moveTo(posA.x, posA.y);
+      ctx.lineTo(posB.x, posB.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  });
+}
+
+function drawFieldClusters() {
+  fieldKeys.forEach(fk => {
+    const cc = clusterCenters[fk];
+    const f = FIELDS[fk];
+    const rgb = hexToRgb(f.color);
+
+    // Soft background glow
+    const grad = ctx.createRadialGradient(cc.x, cc.y, 0, cc.x, cc.y, Math.min(W,H) * 0.14);
+    grad.addColorStop(0, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.06)`);
+    grad.addColorStop(1, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cc.x, cc.y, Math.min(W,H) * 0.14, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Field label
+    ctx.save();
+    ctx.font = '600 13px "Playfair Display", serif';
+    ctx.fillStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.7)`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const lines = f.label.split('\n');
+    lines.forEach((line, li) => {
+      ctx.fillText(line, cc.x, cc.y - 6 + (li - (lines.length - 1) / 2) * 16);
+    });
+    ctx.restore();
+  });
+}
+
+function drawGapClouds(time) {
+  GAPS.forEach((g, i) => {
+    const pos = gapPositions[i];
+    if (!pos) return;
+    const isHov = hoveredGap === g;
+
+    // Pulsing cloud
+    const pulse = 1 + Math.sin(time * 0.003 + i) * 0.03;
+    const w = pos.w * pulse;
+    const h = pos.h * pulse;
+
+    const urgColor = g.urgency === 'high' ? [224,112,112] : [232,168,78];
+    const alpha = isHov ? 0.25 : 0.10;
+
+    ctx.save();
+    ctx.fillStyle = `rgba(${urgColor[0]},${urgColor[1]},${urgColor[2]},${alpha})`;
+    ctx.strokeStyle = `rgba(${urgColor[0]},${urgColor[1]},${urgColor[2]},${isHov ? 0.5 : 0.2})`;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+
+    // Rounded rect cloud
+    const rx = pos.x - w/2, ry = pos.y - h/2;
+    const r = 14;
+    ctx.beginPath();
+    ctx.moveTo(rx + r, ry);
+    ctx.lineTo(rx + w - r, ry);
+    ctx.quadraticCurveTo(rx + w, ry, rx + w, ry + r);
+    ctx.lineTo(rx + w, ry + h - r);
+    ctx.quadraticCurveTo(rx + w, ry + h, rx + w - r, ry + h);
+    ctx.lineTo(rx + r, ry + h);
+    ctx.quadraticCurveTo(rx, ry + h, rx, ry + h - r);
+    ctx.lineTo(rx, ry + r);
+    ctx.quadraticCurveTo(rx, ry, rx + r, ry);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Label
+    ctx.font = '400 9.5px "DM Mono", monospace';
+    ctx.fillStyle = `rgba(${urgColor[0]},${urgColor[1]},${urgColor[2]},${isHov ? 0.95 : 0.65})`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const gLines = g.label.split('\n');
+    gLines.forEach((line, li) => {
+      ctx.fillText(line, pos.x, pos.y + (li - (gLines.length - 1) / 2) * 12);
+    });
+    ctx.restore();
+  });
+}
+
+function drawExperts(time) {
+  SCIENTISTS.forEach(s => {
+    const pos = expertPositions[s.name];
+    if (!pos) return;
+    const f = FIELDS[s.field];
+    const rgb = hexToRgb(f.color);
+    const isSelected = selectedExpert && selectedExpert.name === s.name;
+    const isHovered = hoveredExpert && hoveredExpert.name === s.name;
+    const isConnected = selectedExpert && selectedExpert.coauth.includes(s.name);
+    const connCount = connCountMap[s.name] || 0;
+
+    let alpha = 1;
+    let scale = 1;
+    if (selectedExpert && !isSelected && !isConnected) { alpha = 0.25; }
+    if (isHovered || isSelected) { scale = 1.12; }
+    if (isConnected) { scale = 1.06; alpha = 1; }
+
+    const r = pos.r * scale;
+
+    // Glow
+    if (isSelected || isHovered) {
+      const glow = ctx.createRadialGradient(pos.x, pos.y, r * 0.5, pos.x, pos.y, r * 2.5);
+      glow.addColorStop(0, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.25)`);
+      glow.addColorStop(1, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, r * 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Ring
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Score ring (outer arc proportional to score)
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r + 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * s.score);
+    ctx.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.5)`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Circle background
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = isSelected ? `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.25)` : 'rgba(14,17,23,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${isSelected ? 0.9 : 0.45})`;
+    ctx.lineWidth = isSelected ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // Initials
+    ctx.font = '500 11px "DM Mono", monospace';
+    ctx.fillStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.initials, pos.x, pos.y);
+
+    // Connection count badge
+    if (connCount > 0) {
+      const bx = pos.x + r * 0.7;
+      const by = pos.y - r * 0.7;
+      const br = 8;
+      ctx.beginPath();
+      ctx.arc(bx, by, br, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.85)`;
+      ctx.fill();
+      ctx.font = '500 8px "DM Mono", monospace';
+      ctx.fillStyle = '#0e1117';
+      ctx.fillText(connCount, bx, by + 0.5);
+    }
+
+    // Status dot
+    if (s.status === 'Shortlisted') {
+      ctx.beginPath();
+      ctx.arc(pos.x - r * 0.7, pos.y - r * 0.7, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#e8a84e';
+      ctx.fill();
+    }
+
+    ctx.restore();
+  });
+}
+
+function draw(time) {
+  animTime = time;
+  ctx.clearRect(0, 0, W, H);
+
+  // Subtle grid
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.015)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+
+  // Center marker
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(232,168,78,0.15)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(232,168,78,0.05)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+
+  drawFieldClusters();
+  drawConnectionLines(time);
+  drawGapClouds(time);
+  drawExperts(time);
+
+  requestAnimationFrame(draw);
+}
+
+// === INTERACTIONS ===
+function getExpertAt(mx, my) {
+  for (const s of SCIENTISTS) {
+    const p = expertPositions[s.name];
+    if (!p) continue;
+    const dx = mx - p.x, dy = my - p.y;
+    if (dx*dx + dy*dy < (p.r + 4) * (p.r + 4)) return s;
+  }
+  return null;
+}
+
+function getGapAt(mx, my) {
+  for (let i = 0; i < GAPS.length; i++) {
+    const pos = gapPositions[i];
+    if (!pos) continue;
+    if (Math.abs(mx - pos.x) < pos.w / 2 + 8 && Math.abs(my - pos.y) < pos.h / 2 + 8) return GAPS[i];
+  }
+  return null;
+}
+
+function getConnectionAt(mx, my) {
+  const threshold = 6;
+  for (const c of connections) {
+    const pA = expertPositions[c.a];
+    const pB = expertPositions[c.b];
+    if (!pA || !pB) continue;
+
+    if (c.crossField) {
+      // Check distance to quadratic bezier
+      const mx2 = (pA.x + pB.x) / 2;
+      const my2 = (pA.y + pB.y) / 2;
+      const ddx = pB.x - pA.x;
+      const ddy = pB.y - pA.y;
+      const cpx = mx2 + ddy * 0.15;
+      const cpy = my2 - ddx * 0.15;
+      // Sample points on curve
+      for (let t = 0; t <= 1; t += 0.05) {
+        const x = (1-t)*(1-t)*pA.x + 2*(1-t)*t*cpx + t*t*pB.x;
+        const y = (1-t)*(1-t)*pA.y + 2*(1-t)*t*cpy + t*t*pB.y;
+        if (Math.abs(mx - x) < threshold && Math.abs(my - y) < threshold) return c;
+      }
+    } else {
+      // Point to line segment distance
+      const dx = pB.x - pA.x, dy = pB.y - pA.y;
+      const lenSq = dx*dx + dy*dy;
+      if (lenSq === 0) continue;
+      let t = ((mx - pA.x)*dx + (my - pA.y)*dy) / lenSq;
+      t = Math.max(0, Math.min(1, t));
+      const px = pA.x + t*dx, py = pA.y + t*dy;
+      const dist = Math.sqrt((mx-px)*(mx-px) + (my-py)*(my-py));
+      if (dist < threshold) return c;
+    }
+  }
+  return null;
+}
+
+function showTooltip(x, y, html) {
+  const tip = document.getElementById('tooltip');
+  tip.innerHTML = html;
+  tip.classList.add('show');
+  tip.style.left = (x + 14) + 'px';
+  tip.style.top = (y - 10) + 'px';
+  // Keep in viewport
+  const rect = tip.getBoundingClientRect();
+  if (rect.right > W - 10) tip.style.left = (x - rect.width - 10) + 'px';
+  if (rect.bottom > H - 10) tip.style.top = (y - rect.height - 10) + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').classList.remove('show');
+}
+
+function showDetailPanel(s) {
+  selectedExpert = s;
+  const f = FIELDS[s.field];
+  const cc = connCountMap[s.name] || 0;
+  const coauthors = s.coauth.map(name => SCIENTISTS.find(x => x.name === name)).filter(Boolean);
+  const crossCoauth = coauthors.filter(x => x.field !== s.field);
+
+  let html = `
+    <div class="dp-field-tag" style="background:${f.color}22;color:${f.color}">${f.short}</div>
+    <h2>${s.name}</h2>
+    <p class="dp-affil">${s.affil} &middot; ${s.country}</p>
+    <div class="dp-meta">
+      <div class="dp-meta-item"><div class="val">${(s.score * 100).toFixed(0)}</div><div class="lbl">Score</div></div>
+      <div class="dp-meta-item"><div class="val">${s.hindex}</div><div class="lbl">h-index</div></div>
+      <div class="dp-meta-item"><div class="val">${s.papers}</div><div class="lbl">Papers</div></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <span class="dp-status ${s.status === 'Shortlisted' ? 'shortlisted' : 'auto'}">${s.status === 'Shortlisted' ? 'Shortlisted' : 'Auto-discovered'}</span>
+    </div>
+    <div class="dp-section">
+      <h3>Research Focus</h3>
+      <p class="dp-research">${s.research}</p>
+    </div>
+    <div class="dp-section">
+      <h3>Expertise Tags</h3>
+      <div class="dp-tags">${s.tags.map(t => `<span>${t}</span>`).join('')}</div>
+    </div>
+    <div class="dp-section">
+      <h3>Network &mdash; ${cc} Connection${cc !== 1 ? 's' : ''} ${crossCoauth.length > 0 ? `(${crossCoauth.length} cross-field)` : ''}</h3>`;
+
+  if (coauthors.length === 0) {
+    html += `<p style="font-size:12px;color:#6a6a7a;padding:8px 0;">No co-authorship connections in this dataset.</p>`;
+  } else {
+    coauthors.forEach(ca => {
+      const cf = FIELDS[ca.field];
+      const connType = ca.field !== s.field ? 'Cross-field' : 'Same field';
+      html += `
+        <div class="dp-coauth-item" data-expert="${ca.name}">
+          <div class="dp-coauth-dot" style="background:${cf.color}"></div>
+          <span class="dp-coauth-name">${ca.name}</span>
+          <span class="dp-coauth-field">${cf.short}</span>
+          <span class="dp-coauth-type">${connType}</span>
+        </div>`;
+    });
+  }
+
+  // Check if expert is mentioned in any gap
+  const relevantGaps = GAPS.filter(g => g.scientists.includes(s.name));
+  if (relevantGaps.length > 0) {
+    html += `</div><div class="dp-section"><h3>Linked Knowledge Gaps</h3>`;
+    relevantGaps.forEach(g => {
+      html += `<div style="padding:6px 10px;margin-bottom:4px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:6px;font-size:11px;color:#9a98aa">
+        <span style="color:${g.urgency === 'high' ? '#e07070' : '#e8a84e'};margin-right:6px;">&bull;</span>${g.short}</div>`;
+    });
+  }
+
+  html += `</div>
+    <div class="dp-section">
+      <h3>Contact</h3>
+      <p style="font-size:12px;color:#8a8a9a">${s.email}</p>
+    </div>`;
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailPanel').classList.add('open');
+
+  // Add click handlers for coauthor items
+  document.querySelectorAll('.dp-coauth-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.expert;
+      const expert = SCIENTISTS.find(x => x.name === name);
+      if (expert) showDetailPanel(expert);
+    });
+  });
+}
+
+function showGapPanel(g) {
+  let html = `
+    <h4>Knowledge Gap</h4>
+    <span class="gap-urgency ${g.urgency}">${g.urgency === 'high' ? 'High Urgency' : 'Medium Urgency'}</span>
+    <div class="gap-title">${g.short}</div>
+    <p class="gap-desc">${g.desc}</p>
+    <h4 style="margin-top:10px">Subtopics</h4>
+    <ul class="gap-subtopics">${g.subtopics.map(st => `<li>${st}</li>`).join('')}</ul>
+    <h4>Linked Fields</h4>
+    <div style="margin-bottom:8px">${g.linkedFields.map(fk => `<span style="display:inline-block;padding:2px 8px;margin:2px 4px 2px 0;background:${FIELDS[fk].color}18;border:1px solid ${FIELDS[fk].color}33;border-radius:4px;font-size:10px;color:${FIELDS[fk].color}">${FIELDS[fk].short}</span>`).join('')}</div>
+    <h4>Relevant Scientists</h4>
+    <div class="gap-scientists">${g.scientists.map(n => `<span>${n}</span>`).join('')}</div>`;
+  document.getElementById('gapContent').innerHTML = html;
+  document.getElementById('gapPanel').classList.add('open');
+}
+
+function handleMouseMove(e) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const expert = getExpertAt(mx, my);
+  const gap = getGapAt(mx, my);
+  const conn = getConnectionAt(mx, my);
+
+  hoveredExpert = expert;
+  hoveredGap = gap;
+  hoveredConnection = conn;
+  canvas.style.cursor = (expert || gap || conn) ? 'pointer' : 'default';
+
+  if (expert) {
+    const f = FIELDS[expert.field];
+    const cc = connCountMap[expert.name] || 0;
+    showTooltip(e.clientX, e.clientY,
+      `<strong style="color:${f.color}">${expert.name}</strong><br>
+       <span style="color:#8a8a9a">${expert.affil} &middot; ${expert.country}</span><br>
+       <span style="color:#8a8a9a">h-index: ${expert.hindex} &middot; ${expert.papers} papers &middot; ${cc} connections</span>`);
+  } else if (conn) {
+    const sA = SCIENTISTS.find(x => x.name === conn.a);
+    const sB = SCIENTISTS.find(x => x.name === conn.b);
+    const fA = FIELDS[conn.fieldA];
+    const fB = FIELDS[conn.fieldB];
+    showTooltip(e.clientX, e.clientY,
+      `<strong>Co-authorship Link</strong><br>
+       <span style="color:${fA.color}">${conn.a}</span> &harr; <span style="color:${fB.color}">${conn.b}</span><br>
+       <span style="color:#8a8a9a">${conn.crossField ? 'Cross-field collaboration' : 'Same-field collaboration'}</span>`);
+  } else if (gap) {
+    showTooltip(e.clientX, e.clientY,
+      `<strong style="color:${gap.urgency === 'high' ? '#e07070' : '#e8a84e'}">${gap.short}</strong><br>
+       <span style="color:#8a8a9a">${gap.urgency === 'high' ? 'High' : 'Medium'} urgency &middot; Click for details</span>`);
+  } else {
+    hideTooltip();
+  }
+}
+
+function handleClick(e) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const expert = getExpertAt(mx, my);
+  const gap = getGapAt(mx, my);
+
+  if (expert) {
+    showDetailPanel(expert);
+    document.getElementById('gapPanel').classList.remove('open');
+  } else if (gap) {
+    showGapPanel(gap);
+    selectedExpert = null;
+    document.getElementById('detailPanel').classList.remove('open');
+  } else {
+    selectedExpert = null;
+    document.getElementById('detailPanel').classList.remove('open');
+    document.getElementById('gapPanel').classList.remove('open');
+  }
+}
+
+// === BUILD LEGEND & STATS ===
+function buildLegend() {
+  const panel = document.getElementById('legendPanel');
+  let html = '<h4>Research Fields</h4>';
+  fieldKeys.forEach(fk => {
+    const f = FIELDS[fk];
+    const count = SCIENTISTS.filter(s => s.field === fk).length;
+    html += `<div class="legend-row"><div class="legend-dot" style="background:${f.color}"></div><span class="legend-label">${f.short} (${count})</span></div>`;
+  });
+  html += `<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)">
+    <div class="legend-row"><div style="width:16px;height:2px;background:#e8a84e;border-radius:1px"></div><span class="legend-label">Shortlisted</span></div>
+    <div class="legend-row"><div style="width:16px;height:1px;background:rgba(255,255,255,.2);border-radius:1px"></div><span class="legend-label">Co-authorship</span></div>
+  </div>`;
+  panel.innerHTML = html;
+}
+
+function buildStats() {
+  const panel = document.getElementById('statsPanel');
+  const avgConn = (connections.length * 2 / SCIENTISTS.length).toFixed(1);
+  panel.innerHTML = `
+    <h4>Network Statistics</h4>
+    <div class="stat-row"><span class="stat-label">Total Experts</span><span class="stat-val">${SCIENTISTS.length}</span></div>
+    <div class="stat-row"><span class="stat-label">Total Connections</span><span class="stat-val">${connections.length}</span></div>
+    <div class="stat-row"><span class="stat-label">Cross-field Links</span><span class="stat-val">${crossFieldCount}</span></div>
+    <div class="stat-row"><span class="stat-label">Avg. Connections</span><span class="stat-val">${avgConn}</span></div>
+    <div class="stat-row"><span class="stat-label">Knowledge Gaps</span><span class="stat-val">${GAPS.length}</span></div>`;
+}
+
+// === ENTRANCE ===
+document.getElementById('enterBtn').addEventListener('click', () => {
+  userInterest = document.getElementById('q1').value || 'all';
+  userGoal = document.getElementById('q2').value || 'overview';
+  document.getElementById('entrance').classList.add('hide');
+  document.getElementById('mainUI').style.display = 'block';
+  setTimeout(() => {
+    document.getElementById('entrance').style.display = 'none';
+    initCanvas();
+    buildLegend();
+    buildStats();
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('click', handleClick);
+    document.getElementById('closeDetail').addEventListener('click', () => {
+      selectedExpert = null;
+      document.getElementById('detailPanel').classList.remove('open');
+    });
+    document.getElementById('closeGap').addEventListener('click', () => {
+      document.getElementById('gapPanel').classList.remove('open');
+    });
+    requestAnimationFrame(draw);
+  }, 100);
+});
+</script>
+</body>
+</html>
