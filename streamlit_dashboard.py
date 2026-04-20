@@ -326,6 +326,7 @@ def load_airtable_molecules():
 def push_to_airtable(table, fields_list):
     """Push a batch of records to Airtable. Returns number of successes."""
     successes = 0
+    last_error = ""
     # Airtable batch limit is 10
     for i in range(0, len(fields_list), 10):
         batch = fields_list[i:i+10]
@@ -335,8 +336,12 @@ def push_to_airtable(table, fields_list):
                               headers=AT_HEADERS, json=payload, timeout=15)
             if r.ok:
                 successes += len(batch)
-        except Exception:
-            pass
+            else:
+                last_error = r.text[:300]
+                st.warning(f"Airtable API error: {r.status_code} — {last_error}")
+        except Exception as e:
+            last_error = str(e)
+            st.warning(f"Network error pushing to Airtable: {last_error}")
     return successes
 
 
@@ -1389,6 +1394,85 @@ with tab_review:
                     st.session_state.review_queue = []
                     st.rerun()
 
+            # ---- CSV EXPORT / RE-UPLOAD ----
+            st.markdown("##### 📥 Export & Re-upload for AI Review")
+            st.caption(
+                "Export pending items as CSV → send to your AI chatbot for review → "
+                "re-upload the CSV with the 'decision' column filled (approve / reject)."
+            )
+
+            export_col, upload_col = st.columns(2)
+
+            with export_col:
+                # Build CSV for download
+                csv_rows = []
+                for i, item in enumerate(queue):
+                    claims_text = " | ".join(
+                        c[:120] for c in item.get("claims", [])[:5]
+                    )
+                    csv_rows.append({
+                        "id": i,
+                        "title": item.get("title", ""),
+                        "authors": item.get("authors", ""),
+                        "relevance_score": f"{item.get('relevance_score', 0):.0%}",
+                        "claims": claims_text,
+                        "decision": "",  # Empty — to be filled by Daniel / AI
+                    })
+                export_df = pd.DataFrame(csv_rows)
+                csv_bytes = export_df.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "📤 Export Pending to CSV",
+                    data=csv_bytes,
+                    file_name="review_queue_for_approval.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+
+            with upload_col:
+                uploaded_csv = st.file_uploader(
+                    "📥 Upload reviewed CSV",
+                    type=["csv"],
+                    key="review_csv_upload",
+                    help="Upload the CSV with the 'decision' column filled: approve / reject",
+                )
+
+            if uploaded_csv is not None:
+                try:
+                    decisions_df = pd.read_csv(uploaded_csv)
+                    if "decision" not in decisions_df.columns:
+                        st.error("CSV must have a 'decision' column with 'approve' or 'reject' values.")
+                    else:
+                        approved_count = 0
+                        rejected_count = 0
+                        remaining = []
+
+                        for _, row in decisions_df.iterrows():
+                            decision = str(row.get("decision", "")).strip().lower()
+                            idx = int(row.get("id", -1))
+                            if 0 <= idx < len(queue):
+                                if decision == "approve":
+                                    st.session_state.approved_items.append(queue[idx])
+                                    approved_count += 1
+                                elif decision == "reject":
+                                    st.session_state.rejected_items.append(queue[idx])
+                                    rejected_count += 1
+                                else:
+                                    remaining.append(queue[idx])
+                            else:
+                                if idx < len(queue):
+                                    remaining.append(queue[idx])
+
+                        # Keep only items without decisions
+                        st.session_state.review_queue = remaining
+                        st.success(
+                            f"CSV processed! ✅ {approved_count} approved · "
+                            f"❌ {rejected_count} rejected · "
+                            f"⏳ {len(remaining)} still pending"
+                        )
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Error reading CSV: {e}")
+
             st.divider()
 
             # Individual items
@@ -1447,15 +1531,21 @@ with tab_review:
                 if st.button("📤 Push Approved to Airtable", type="primary", use_container_width=True):
                     fields_list = []
                     for item in st.session_state.approved_items:
-                        fields_list.append({
+                        year_val = item.get("year")
+                        if year_val is not None:
+                            try:
+                                year_val = int(year_val)
+                            except (ValueError, TypeError):
+                                year_val = None
+                        record = {
                             "Name": item.get("title", "")[:200],
-                            "Year": item.get("year"),
-                            "Venue": item.get("venue", ""),
-                            "branch": item.get("branch", ""),
-                            "relevance_score": item.get("relevance_score", 0),
                             "URL": item.get("url", ""),
-                            "db_source": "Pipeline Dashboard",
-                        })
+                            "Venue": item.get("venue", ""),
+                            "query": item.get("branch", ""),
+                        }
+                        if year_val is not None:
+                            record["Year"] = year_val
+                        fields_list.append(record)
                     successes = push_to_airtable(SOURCES_TABLE, fields_list)
                     if successes > 0:
                         st.success(f"✅ Successfully pushed {successes} sources to Airtable!")
