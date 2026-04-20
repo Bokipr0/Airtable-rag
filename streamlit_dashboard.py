@@ -80,99 +80,98 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     .block-container { max-width: 1200px; }
-    div[data-testid="stSidebar"] { background: #0f1117; }
 
     /* Tier labels */
-    .tier-1st { color: #2ecc71; font-weight: 700; font-size: 1.8rem; }
-    .tier-2nd { color: #f39c12; font-weight: 700; font-size: 1.8rem; }
-    .tier-3rd { color: #e74c3c; font-weight: 700; font-size: 1.8rem; }
+    .tier-1st { color: #1a8a4a; font-weight: 700; font-size: 1.8rem; }
+    .tier-2nd { color: #c47f0a; font-weight: 700; font-size: 1.8rem; }
+    .tier-3rd { color: #c0392b; font-weight: 700; font-size: 1.8rem; }
 
     /* Paper cards */
     .paper-card {
-        background: #1a1d27; border: 1px solid #2d3350;
+        background: #f8f9fb; border: 1px solid #dde1e8;
         border-radius: 10px; padding: 14px 18px; margin-bottom: 10px;
     }
-    .paper-card.relevant-1st { border-left: 4px solid #2ecc71; }
-    .paper-card.relevant-2nd { border-left: 4px solid #f39c12; }
-    .paper-card.relevant-3rd { border-left: 4px solid #e74c3c; }
-    .paper-card.dumped        { border-left: 4px solid #555; opacity: 0.6; }
+    .paper-card.relevant-1st { border-left: 4px solid #1a8a4a; }
+    .paper-card.relevant-2nd { border-left: 4px solid #c47f0a; }
+    .paper-card.relevant-3rd { border-left: 4px solid #c0392b; }
+    .paper-card.dumped        { border-left: 4px solid #999; opacity: 0.6; }
 
-    /* Paper card text — bright defaults */
-    .paper-card strong { color: #f0f2f6; }
-    .paper-card .meta-line { font-size: 0.82rem; color: #c4c8d4; margin-top: 4px; }
+    /* Paper card text */
+    .paper-card strong { color: #1a1a2e; }
+    .paper-card .meta-line { font-size: 0.82rem; color: #555; margin-top: 4px; }
 
     /* Chips — claims */
     .claim-chip {
-        display: inline-block; background: rgba(59,130,246,0.2);
-        border: 1px solid rgba(59,130,246,0.5); border-radius: 8px;
-        padding: 6px 12px; margin: 3px; font-size: 0.85rem; color: #93bbfc;
+        display: inline-block; background: rgba(37,99,186,0.08);
+        border: 1px solid rgba(37,99,186,0.25); border-radius: 8px;
+        padding: 6px 12px; margin: 3px; font-size: 0.85rem; color: #1a5096;
     }
-    .claim-chip span, .claim-chip .claim-text { color: #e8edf5; }
+    .claim-chip span, .claim-chip .claim-text { color: #1a1a2e; }
     .mol-chip {
-        display: inline-block; background: rgba(46,204,113,0.12);
-        border: 1px solid rgba(46,204,113,0.3); border-radius: 8px;
-        padding: 4px 10px; margin: 2px; font-size: 0.82rem; color: #7ee8b0;
+        display: inline-block; background: rgba(26,138,74,0.08);
+        border: 1px solid rgba(26,138,74,0.25); border-radius: 8px;
+        padding: 4px 10px; margin: 2px; font-size: 0.82rem; color: #15713e;
     }
     .kw-chip {
-        display: inline-block; background: rgba(124,92,224,0.12);
-        border: 1px solid rgba(124,92,224,0.3); border-radius: 20px;
-        padding: 4px 12px; margin: 2px; font-size: 0.8rem; color: #c4b5fd;
+        display: inline-block; background: rgba(100,70,180,0.08);
+        border: 1px solid rgba(100,70,180,0.25); border-radius: 20px;
+        padding: 4px 12px; margin: 2px; font-size: 0.8rem; color: #5b3db3;
     }
 
-    .feed-entry { padding: 8px 0; border-bottom: 1px solid #1e2130; }
+    .feed-entry { padding: 8px 0; border-bottom: 1px solid #e0e4ea; }
 
     /* Score badges */
     .score-badge {
         display: inline-block; padding: 2px 8px; border-radius: 12px;
         font-size: 0.75rem; font-weight: 600;
     }
-    .score-1st { background: rgba(46,204,113,0.2); color: #2ecc71; }
-    .score-2nd { background: rgba(243,156,18,0.2); color: #f39c12; }
-    .score-3rd { background: rgba(231,76,60,0.2); color: #e74c3c; }
+    .score-1st { background: rgba(26,138,74,0.12); color: #1a8a4a; }
+    .score-2nd { background: rgba(196,127,10,0.12); color: #c47f0a; }
+    .score-3rd { background: rgba(192,57,43,0.12); color: #c0392b; }
 
     /* Session history cards */
     .session-card {
-        background: #1a1d27; border: 1px solid #2d3350;
+        background: #f8f9fb; border: 1px solid #dde1e8;
         border-radius: 10px; padding: 14px 18px; margin-bottom: 8px;
-        color: #e0e4f0;
+        color: #1a1a2e;
     }
-    .session-card .session-date { color: #8b92a8; font-size: 0.8rem; }
-    .session-card .session-stat { font-size: 1.2rem; font-weight: 600; color: #f0f2f6; }
+    .session-card .session-date { color: #666; font-size: 0.8rem; }
+    .session-card .session-stat { font-size: 1.2rem; font-weight: 600; color: #1a1a2e; }
 
     /* Review queue cards */
     .review-card {
-        background: #1a1d27; border: 1px solid #2d3350;
+        background: #f8f9fb; border: 1px solid #dde1e8;
         border-radius: 10px; padding: 16px; margin-bottom: 12px;
     }
-    .review-card strong { color: #f0f2f6; }
-    .review-card .review-meta { color: #c4c8d4; font-size: 0.82rem; }
+    .review-card strong { color: #1a1a2e; }
+    .review-card .review-meta { color: #555; font-size: 0.82rem; }
 
     /* Molecule category header */
     .mol-category-header {
-        color: #a9c4f5; font-size: 1rem; font-weight: 600;
+        color: #1a5096; font-size: 1rem; font-weight: 600;
         margin-top: 16px; margin-bottom: 8px;
-        border-bottom: 1px solid #2d3350; padding-bottom: 6px;
+        border-bottom: 1px solid #dde1e8; padding-bottom: 6px;
     }
 
     /* Completion banner */
     .completion-banner {
-        background: linear-gradient(135deg, #1a3a2a 0%, #1a2d1a 100%);
-        border: 2px solid #2ecc71;
+        background: linear-gradient(135deg, #e8f5ec 0%, #f0faf3 100%);
+        border: 2px solid #1a8a4a;
         border-radius: 12px;
         padding: 24px;
         text-align: center;
         margin: 16px 0;
     }
-    .completion-banner h2 { color: #2ecc71; margin: 0 0 8px 0; }
-    .completion-banner p { color: #c4d4c8; margin: 0; font-size: 1rem; }
+    .completion-banner h2 { color: #1a8a4a; margin: 0 0 8px 0; }
+    .completion-banner p { color: #333; margin: 0; font-size: 1rem; }
 
     /* Keyword submission */
     .kw-attributed {
-        display: inline-block; background: rgba(124,92,224,0.12);
-        border: 1px solid rgba(124,92,224,0.3); border-radius: 20px;
-        padding: 4px 12px; margin: 2px; font-size: 0.8rem; color: #c4b5fd;
+        display: inline-block; background: rgba(100,70,180,0.08);
+        border: 1px solid rgba(100,70,180,0.25); border-radius: 20px;
+        padding: 4px 12px; margin: 2px; font-size: 0.8rem; color: #5b3db3;
     }
-    .kw-attributed .kw-author { font-size: 0.7rem; color: #8b92a8; }
+    .kw-attributed .kw-author { font-size: 0.7rem; color: #666; }
 
     /* Toggle buttons for selection grids */
     .toggle-btn {
@@ -181,16 +180,16 @@ st.markdown("""
         text-align: center; transition: all 0.15s ease;
     }
     .toggle-btn-selected-field {
-        border: 3px solid #2ecc71; background: rgba(46,204,113,0.10); color: #e0e4f0;
+        border: 3px solid #1a8a4a; background: rgba(26,138,74,0.08); color: #1a1a2e;
     }
     .toggle-btn-unselected {
-        border: 1px solid #555; background: rgba(255,255,255,0.03); color: #a0a4b0;
+        border: 1px solid #ccc; background: rgba(0,0,0,0.02); color: #555;
     }
     .toggle-btn-selected-ptype {
-        border: 3px solid #f39c12; background: rgba(243,156,18,0.10); color: #e0e4f0;
+        border: 3px solid #c47f0a; background: rgba(196,127,10,0.08); color: #1a1a2e;
     }
     .toggle-btn-selected-kw {
-        border: 3px solid #7c5ce0; background: rgba(124,92,224,0.10); color: #e0e4f0;
+        border: 3px solid #6c46b4; background: rgba(100,70,180,0.08); color: #1a1a2e;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -243,12 +242,12 @@ for key, val in defaults.items():
 if not st.session_state.logged_in:
     st.markdown("""
     <div style="text-align:center; padding: 60px 20px;
-         background: linear-gradient(145deg, rgba(46,75,120,0.35) 0%, rgba(30,55,90,0.25) 40%, rgba(50,100,80,0.20) 100%);
+         background: linear-gradient(145deg, rgba(37,99,186,0.06) 0%, rgba(26,138,74,0.06) 100%);
          border-radius: 18px; margin: 40px auto; max-width: 700px;
-         border: 1px solid rgba(120,160,200,0.2);">
-        <h1 style="color:#d0dce8; font-weight:700;">🧪 Flavor Intelligence Dashboard</h1>
-        <p style="color:#b0bcc8; font-size:1.1rem;">GFI — Flavor & Aroma Initiative</p>
-        <p style="color:#90a0b0; margin-top:20px;">Welcome! Please identify yourself to enter the dashboard.</p>
+         border: 1px solid #dde1e8;">
+        <h1 style="color:#1a1a2e; font-weight:700;">🧪 Flavor Intelligence Dashboard</h1>
+        <p style="color:#444; font-size:1.1rem;">GFI — Flavor & Aroma Initiative</p>
+        <p style="color:#666; margin-top:20px;">Welcome! Please identify yourself to enter the dashboard.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -751,7 +750,7 @@ with tab_live:
     <div><span class="session-stat">{sess['dumped']}</span> dumped</div>
     <div><span class="session-stat">{sess['molecules']}</span> molecules</div>
     <div><span class="session-stat">{sess['claims']}</span> claims</div>
-    <div style="margin-top:6px; color:#c4c8d4; font-size:0.8rem;">
+    <div style="margin-top:6px; color:#555; font-size:0.8rem;">
         Keywords: {', '.join(sess.get('keywords', [])[:3])}{'...' if len(sess.get('keywords', [])) > 3 else ''}
     </div>
 </div>
@@ -783,14 +782,10 @@ with tab_live:
             with field_cols[i % 4]:
                 is_sel = field["name"] in st.session_state.selected_fields
                 label = f"{field['icon']} {field['name']}"
-                if is_sel:
-                    st.markdown(f'<div class="toggle-btn toggle-btn-selected-field">{label}</div>',
-                                unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="toggle-btn toggle-btn-unselected">{label}</div>',
-                                unsafe_allow_html=True)
-                if st.button("Toggle", key=f"field_toggle_{i}",
-                             help=field["desc"], use_container_width=True):
+                btn_type = "primary" if is_sel else "secondary"
+                if st.button(label, key=f"field_toggle_{i}",
+                             help=field["desc"], use_container_width=True,
+                             type=btn_type):
                     if field["name"] in st.session_state.selected_fields:
                         st.session_state.selected_fields.discard(field["name"])
                     else:
@@ -814,14 +809,10 @@ with tab_live:
             with type_cols[i % 4]:
                 is_sel = ptype["name"] in st.session_state.selected_ptypes
                 label = f"{ptype['icon']} {ptype['name']}"
-                if is_sel:
-                    st.markdown(f'<div class="toggle-btn toggle-btn-selected-ptype">{label}</div>',
-                                unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="toggle-btn toggle-btn-unselected">{label}</div>',
-                                unsafe_allow_html=True)
-                if st.button("Toggle", key=f"ptype_toggle_{i}",
-                             help=ptype["desc"], use_container_width=True):
+                btn_type = "primary" if is_sel else "secondary"
+                if st.button(label, key=f"ptype_toggle_{i}",
+                             help=ptype["desc"], use_container_width=True,
+                             type=btn_type):
                     if ptype["name"] in st.session_state.selected_ptypes:
                         st.session_state.selected_ptypes.discard(ptype["name"])
                     else:
@@ -855,15 +846,11 @@ with tab_live:
             with kw_cols[i % 4]:
                 is_sel = kw["keyword"] in st.session_state.selected_kws
                 label = f"{priority_icon} {kw['keyword'][:35]}"
-                if is_sel:
-                    st.markdown(f'<div class="toggle-btn toggle-btn-selected-kw">{label}</div>',
-                                unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="toggle-btn toggle-btn-unselected">{label}</div>',
-                                unsafe_allow_html=True)
-                if st.button("Toggle", key=f"kw_toggle_{i}",
+                btn_type = "primary" if is_sel else "secondary"
+                if st.button(label, key=f"kw_toggle_{i}",
                              help=f"Branch: {kw.get('branch', '')} · Priority: {kw.get('priority', '')}",
-                             use_container_width=True):
+                             use_container_width=True,
+                             type=btn_type):
                     if kw["keyword"] in st.session_state.selected_kws:
                         st.session_state.selected_kws.discard(kw["keyword"])
                     else:
@@ -1088,8 +1075,8 @@ with tab_live:
                             st.markdown(f"""
 <div class="paper-card dumped">
   <span style="color:#e74c3c; font-weight:600">✗ DUMPED</span> &nbsp;
-  <span style="color:#c4c8d4">{result['title'][:70]}</span>
-  <span style="float:right;font-size:0.85rem;color:#a0a4b0">Score: {result['relevance_score']:.0%}</span>
+  <span style="color:#555">{result['title'][:70]}</span>
+  <span style="float:right;font-size:0.85rem;color:#666">Score: {result['relevance_score']:.0%}</span>
 </div>
                             """, unsafe_allow_html=True)
 
@@ -1122,7 +1109,7 @@ with tab_live:
                                  color="Tier", color_discrete_map=TIER_COLORS, hole=0.45)
                     fig.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                        font_color="#e0e4f0", showlegend=False,
+                        font_color="#1a1a2e", showlegend=False,
                         height=200, margin=dict(t=10, b=10, l=10, r=10),
                     )
                     tier_chart_slot.plotly_chart(fig, use_container_width=True)
@@ -1558,7 +1545,7 @@ with tab_sources:
             fig = px.pie(tier_df, values="Count", names="Tier",
                          color="Tier", color_discrete_map=TIER_COLORS, hole=0.4)
             fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                              font_color="#e0e4f0", height=300)
+                              font_color="#1a1a2e", height=300)
             st.plotly_chart(fig, use_container_width=True)
 
         with ch2:
@@ -1567,7 +1554,7 @@ with tab_sources:
                 fig = px.bar(branch_df, x="branch", y="count", color="tier",
                              color_discrete_map=TIER_COLORS, barmode="group")
                 fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                  font_color="#e0e4f0", height=300,
+                                  font_color="#1a1a2e", height=300,
                                   xaxis_title="Branch", yaxis_title="Count")
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -1638,15 +1625,15 @@ with tab_molecules:
                     subtype = mol.get("type", "")
 
                     sensory_text = f" — {sensory}" if sensory else ""
-                    subtype_text = f" <span style='color:#8b92a8; font-size:0.75rem'>({subtype})</span>" if subtype else ""
+                    subtype_text = f" <span style='color:#888; font-size:0.75rem'>({subtype})</span>" if subtype else ""
                     st.markdown(f"""
-<div style="background:#1a1d27; border:1px solid #2d3350; border-radius:8px;
-            padding:10px 14px; margin-bottom:6px; border-left:3px solid #2ecc71;">
-  <strong style="color:#7ee8b0">{mol['name']}</strong>{subtype_text}
-  <span style="color:#c4c8d4; font-size:0.85rem;">{sensory_text}</span>
-  <div style="color:#a0a4b0; font-size:0.8rem; margin-top:3px;">
-    Role: <strong style="color:#c4c8d4">{role}</strong> &nbsp;&middot;&nbsp;
-    Confidence: <strong style="color:#c4c8d4">{conf:.0%}</strong>
+<div style="background:#f8f9fb; border:1px solid #dde1e8; border-radius:8px;
+            padding:10px 14px; margin-bottom:6px; border-left:3px solid #1a8a4a;">
+  <strong style="color:#15713e">{mol['name']}</strong>{subtype_text}
+  <span style="color:#555; font-size:0.85rem;">{sensory_text}</span>
+  <div style="color:#666; font-size:0.8rem; margin-top:3px;">
+    Role: <strong style="color:#555">{role}</strong> &nbsp;&middot;&nbsp;
+    Confidence: <strong style="color:#555">{conf:.0%}</strong>
     {f' &nbsp;&middot;&nbsp; From: <em>{kw[:30]}</em>' if kw else ''}
   </div>
 </div>
@@ -1673,7 +1660,7 @@ with tab_molecules:
                 ])
                 fig = px.bar(type_df, x="Category", y="Count", color="Category")
                 fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                  font_color="#e0e4f0", showlegend=False, height=250)
+                                  font_color="#1a1a2e", showlegend=False, height=250)
                 st.plotly_chart(fig, use_container_width=True)
 
 
@@ -1695,8 +1682,8 @@ with tab_claims:
         for i, claim in enumerate(claims):
             st.markdown(f"""
 <div class="claim-chip" style="display:block; margin-bottom:8px;">
-  <strong style="color:#93bbfc">Claim {i+1}:</strong>
-  <span class="claim-text" style="color:#e8edf5">{claim}</span>
+  <strong style="color:#1a5096">Claim {i+1}:</strong>
+  <span class="claim-text" style="color:#1a1a2e">{claim}</span>
 </div>
             """, unsafe_allow_html=True)
 
@@ -1850,9 +1837,9 @@ with tab_community:
 <div class="session-card" style="display:flex; align-items:center; justify-content:space-between;">
   <div>
     <span style="font-size:1.4rem">{pos_label}</span> &nbsp;
-    <strong style="color:#f0f2f6; font-size:1.1rem">{entry['name']}</strong>
+    <strong style="color:#1a1a2e; font-size:1.1rem">{entry['name']}</strong>
   </div>
-  <div style="text-align:right; color:#c4c8d4; font-size:0.85rem;">
+  <div style="text-align:right; color:#555; font-size:0.85rem;">
     🚀 {entry['runs']} runs &nbsp;&middot;&nbsp;
     🚩 {entry['flags']} flags &nbsp;&middot;&nbsp;
     🔑 {entry['keywords']} keywords &nbsp;&middot;&nbsp;
@@ -1902,11 +1889,11 @@ with tab_community:
             st.markdown(f"""
 <div class="session-card">
   <div style="display:flex; justify-content:space-between; align-items:center;">
-    <strong style="color:#f0f2f6">{fb.get('user','')}</strong>
+    <strong style="color:#1a1a2e">{fb.get('user','')}</strong>
     <span style="color:{rating_color}; font-weight:600">{fb.get('rating','')}</span>
   </div>
-  <div style="color:#c4c8d4; margin-top:6px;">{fb.get('learned','')}</div>
-  <div style="color:#8b92a8; font-size:0.75rem; margin-top:4px;">
+  <div style="color:#555; margin-top:6px;">{fb.get('learned','')}</div>
+  <div style="color:#888; font-size:0.75rem; margin-top:4px;">
     {fb.get('date','')} &middot; {fb.get('papers_processed',0)} papers &middot;
     Keywords: {', '.join(fb.get('keywords',[])[:3])}
   </div>
