@@ -67,9 +67,9 @@ TIER_1ST = 0.80
 TIER_2ND = 0.60
 
 TIER_COLORS = {
-    "🥇 1st Level": "#2ecc71",
-    "🥈 2nd Level": "#f39c12",
-    "🥉 3rd Level": "#e74c3c",
+    "1st Level — High Relevance": "#2ecc71",
+    "2nd Level — Mid Relevance": "#f39c12",
+    "3rd Level — Somewhat Relevant": "#e74c3c",
 }
 
 # ---------------------------------------------------------------------------
@@ -101,12 +101,13 @@ st.markdown("""
     .paper-card strong { color: #f0f2f6; }
     .paper-card .meta-line { font-size: 0.82rem; color: #c4c8d4; margin-top: 4px; }
 
-    /* Chips */
+    /* Chips — claims */
     .claim-chip {
-        display: inline-block; background: rgba(79,142,247,0.12);
-        border: 1px solid rgba(79,142,247,0.3); border-radius: 8px;
-        padding: 6px 12px; margin: 3px; font-size: 0.85rem; color: #a9c4f5;
+        display: inline-block; background: rgba(59,130,246,0.2);
+        border: 1px solid rgba(59,130,246,0.5); border-radius: 8px;
+        padding: 6px 12px; margin: 3px; font-size: 0.85rem; color: #93bbfc;
     }
+    .claim-chip span, .claim-chip .claim-text { color: #e8edf5; }
     .mol-chip {
         display: inline-block; background: rgba(46,204,113,0.12);
         border: 1px solid rgba(46,204,113,0.3); border-radius: 8px;
@@ -172,6 +173,25 @@ st.markdown("""
         padding: 4px 12px; margin: 2px; font-size: 0.8rem; color: #c4b5fd;
     }
     .kw-attributed .kw-author { font-size: 0.7rem; color: #8b92a8; }
+
+    /* Toggle buttons for selection grids */
+    .toggle-btn {
+        display: inline-block; border-radius: 8px; padding: 8px 14px;
+        margin: 3px; font-size: 0.85rem; cursor: pointer;
+        text-align: center; transition: all 0.15s ease;
+    }
+    .toggle-btn-selected-field {
+        border: 3px solid #2ecc71; background: rgba(46,204,113,0.10); color: #e0e4f0;
+    }
+    .toggle-btn-unselected {
+        border: 1px solid #555; background: rgba(255,255,255,0.03); color: #a0a4b0;
+    }
+    .toggle-btn-selected-ptype {
+        border: 3px solid #f39c12; background: rgba(243,156,18,0.10); color: #e0e4f0;
+    }
+    .toggle-btn-selected-kw {
+        border: 3px solid #7c5ce0; background: rgba(124,92,224,0.10); color: #e0e4f0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -200,6 +220,16 @@ defaults = {
     "flagged_items": [],           # items flagged for Daniel's attention
     "run_feedback": [],            # post-run feedback entries
     "contributor_stats": {},       # {email: {keywords: N, flags: N, runs: N, name: str}}
+    "dumped_log": [],              # log of dumped articles
+    "run_started": False,          # hide choices during/after run
+    "feedback_submitted": False,   # reset choices after feedback
+    # Toggle button selections (sets)
+    "selected_fields": set(),
+    "selected_ptypes": set(),
+    "selected_kws": set(),
+    "fields_initialized": False,
+    "ptypes_initialized": False,
+    "kws_initialized": False,
 }
 
 for key, val in defaults.items():
@@ -212,10 +242,13 @@ for key, val in defaults.items():
 
 if not st.session_state.logged_in:
     st.markdown("""
-    <div style="text-align:center; padding: 60px 20px;">
-        <h1 style="color:#f0f2f6;">🧪 Flavor Intelligence Dashboard</h1>
-        <p style="color:#c4c8d4; font-size:1.1rem;">GFI — Flavor & Aroma Initiative</p>
-        <p style="color:#a0a4b0; margin-top:20px;">Please identify yourself to enter the dashboard.</p>
+    <div style="text-align:center; padding: 60px 20px;
+         background: linear-gradient(145deg, rgba(46,75,120,0.35) 0%, rgba(30,55,90,0.25) 40%, rgba(50,100,80,0.20) 100%);
+         border-radius: 18px; margin: 40px auto; max-width: 700px;
+         border: 1px solid rgba(120,160,200,0.2);">
+        <h1 style="color:#d0dce8; font-weight:700;">🧪 Flavor Intelligence Dashboard</h1>
+        <p style="color:#b0bcc8; font-size:1.1rem;">GFI — Flavor & Aroma Initiative</p>
+        <p style="color:#90a0b0; margin-top:20px;">Welcome! Please identify yourself to enter the dashboard.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -310,13 +343,13 @@ def push_to_airtable(table, fields_list):
 
 def relevance_tier(score):
     if score is None:
-        return "🥉 3rd Level"
+        return "3rd Level — Somewhat Relevant"
     score = float(score)
     if score >= TIER_1ST:
-        return "🥇 1st Level"
+        return "1st Level — High Relevance"
     elif score >= TIER_2ND:
-        return "🥈 2nd Level"
-    return "🥉 3rd Level"
+        return "2nd Level — Mid Relevance"
+    return "3rd Level — Somewhat Relevant"
 
 
 def tier_css_class(tier):
@@ -368,25 +401,43 @@ def save_keywords_to_file(keywords):
 
 
 # ---------------------------------------------------------------------------
+# DUMPED ARTICLES FILE MANAGEMENT
+# ---------------------------------------------------------------------------
+
+DUMPED_FILE = Path(__file__).parent / "dumped_articles.json"
+
+def load_dumped_articles():
+    """Load dumped articles log from the JSON file on disk."""
+    if DUMPED_FILE.exists():
+        try:
+            data = json.loads(DUMPED_FILE.read_text())
+            if isinstance(data, list):
+                return data
+        except Exception:
+            pass
+    return []
+
+
+def save_dumped_articles(dumped):
+    """Save dumped articles log back to the JSON file."""
+    try:
+        DUMPED_FILE.write_text(json.dumps(dumped, indent=2, ensure_ascii=False))
+        return True
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
 # MOCK PIPELINE ENGINE
 # ---------------------------------------------------------------------------
 
 # ── Chemistry category hierarchy ──
-# Primary classes:   Amino Acids, Fats, Proteins, Sugars, Alcohols
-# Expanded classes:  Aldehydes, Ketones, Enols, Lipids, Thiols, Pyrazines,
-#                    Furanones, Nucleotides, Vitamins, etc.
-#
-# Each molecule carries both its primary_category (broad) and its
-# specific type (expanded), so the UI can group at either level.
-
 CATEGORY_HIERARCHY = {
-    # Primary categories → list of expanded sub-types
     "Amino Acids":  ["amino acid", "sulfur amino acid", "thiol"],
     "Fats":         ["fatty acid", "lipid", "phospholipid"],
     "Proteins":     ["peptide", "enzyme"],
     "Sugars":       ["sugar", "reducing sugar"],
     "Alcohols":     ["alcohol", "enol"],
-    # Expanded categories (standalone)
     "Aldehydes":    ["aldehyde"],
     "Ketones":      ["ketone"],
     "Pyrazines":    ["pyrazine"],
@@ -396,13 +447,11 @@ CATEGORY_HIERARCHY = {
     "Other":        ["other"],
 }
 
-# Reverse lookup: specific type → primary category
 _TYPE_TO_PRIMARY = {}
 for _primary, _subtypes in CATEGORY_HIERARCHY.items():
     for _st in _subtypes:
         _TYPE_TO_PRIMARY[_st] = _primary
 
-# Ordered list of primary categories for display (broad first, then expanded)
 CATEGORY_DISPLAY_ORDER = [
     "Amino Acids", "Fats", "Sugars", "Proteins", "Alcohols",
     "Aldehydes", "Ketones", "Furanones", "Pyrazines",
@@ -415,28 +464,20 @@ def get_primary_category(mol_type):
 
 
 MOCK_MOLECULES = [
-    # ── Amino Acids ──
     {"name": "cysteine",               "type": "sulfur amino acid", "primary": "Amino Acids", "role": "precursor",  "sensory": "",                      "confidence": 0.90},
     {"name": "methionine",             "type": "sulfur amino acid", "primary": "Amino Acids", "role": "precursor",  "sensory": "",                      "confidence": 0.87},
     {"name": "2-methyl-3-furanthiol",  "type": "thiol",             "primary": "Amino Acids", "role": "marker",     "sensory": "meaty, roasted",        "confidence": 0.95},
     {"name": "2-furfurylthiol",        "type": "thiol",             "primary": "Amino Acids", "role": "marker",     "sensory": "coffee, meaty",         "confidence": 0.78},
-    # ── Fats ──
     {"name": "linoleic acid",          "type": "fatty acid",        "primary": "Fats",        "role": "precursor",  "sensory": "",                      "confidence": 0.83},
     {"name": "phosphatidylcholine",    "type": "phospholipid",      "primary": "Fats",        "role": "precursor",  "sensory": "",                      "confidence": 0.79},
-    # ── Sugars ──
     {"name": "ribose",                 "type": "reducing sugar",    "primary": "Sugars",      "role": "precursor",  "sensory": "",                      "confidence": 0.80},
     {"name": "glucose",                "type": "reducing sugar",    "primary": "Sugars",      "role": "precursor",  "sensory": "",                      "confidence": 0.82},
-    # ── Aldehydes ──
     {"name": "hexanal",                "type": "aldehyde",          "primary": "Aldehydes",   "role": "marker",     "sensory": "grassy, fatty",         "confidence": 0.88},
     {"name": "methional",              "type": "aldehyde",          "primary": "Aldehydes",   "role": "product",    "sensory": "cooked potato, brothy", "confidence": 0.72},
-    # ── Pyrazines ──
     {"name": "pyrazine",               "type": "pyrazine",          "primary": "Pyrazines",   "role": "product",    "sensory": "roasted, nutty",        "confidence": 0.82},
     {"name": "2-acetyl-1-pyrroline",   "type": "pyrazine",          "primary": "Pyrazines",   "role": "marker",     "sensory": "popcorn, roasted",      "confidence": 0.77},
-    # ── Furanones ──
     {"name": "4-hydroxy-2,5-dimethyl-3(2H)-furanone", "type": "furanone", "primary": "Furanones", "role": "marker", "sensory": "caramel, meaty",       "confidence": 0.91},
-    # ── Nucleotides ──
     {"name": "IMP",                    "type": "nucleotide",        "primary": "Nucleotides", "role": "potentiator","sensory": "umami",                 "confidence": 0.76},
-    # ── Vitamins ──
     {"name": "thiamine",               "type": "vitamin",           "primary": "Vitamins",    "role": "precursor",  "sensory": "",                      "confidence": 0.85},
 ]
 
@@ -588,11 +629,9 @@ def get_smart_keyword_recommendations(keywords_bible, used_keywords, n=8):
     unused = [kw for kw in keywords_bible if kw["keyword"] not in used_keywords]
     used = [kw for kw in keywords_bible if kw["keyword"] in used_keywords]
 
-    # Sort: HIGH priority first, then MEDIUM, then LOW
     priority_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
     unused.sort(key=lambda x: priority_order.get(x.get("priority", "LOW"), 2))
 
-    # Ensure branch diversity: pick from different branches
     recommended = []
     seen_branches = set()
     for kw in unused:
@@ -603,7 +642,6 @@ def get_smart_keyword_recommendations(keywords_bible, used_keywords, n=8):
         if len(recommended) >= n:
             break
 
-    # Fill remaining slots from used keywords if needed
     if len(recommended) < n:
         for kw in used:
             if kw not in recommended:
@@ -687,9 +725,9 @@ with tab_live:
         st.markdown(f"""
 <div class="completion-banner">
     <h2>🎉 Pipeline Run Complete!</h2>
-    <p><strong>{total}</strong> papers processed &nbsp;·&nbsp;
-       <strong>{relevant}</strong> relevant &nbsp;·&nbsp;
-       <strong>{mols}</strong> molecules &nbsp;·&nbsp;
+    <p><strong>{total}</strong> papers processed &nbsp;&middot;&nbsp;
+       <strong>{relevant}</strong> relevant &nbsp;&middot;&nbsp;
+       <strong>{mols}</strong> molecules &nbsp;&middot;&nbsp;
        <strong>{claims}</strong> claims</p>
     <p style="margin-top:10px; font-size:0.9rem;">
        Head to the <strong>Review Gate</strong> tab to approve items before they reach Airtable.
@@ -721,253 +759,311 @@ with tab_live:
         st.divider()
 
     # ================================================================
-    # STEP 1: CHOOSE YOUR FOCUS — Research Fields
+    # CHOICE SECTION — only show when run has not started (or after feedback)
     # ================================================================
-    st.markdown("#### 🔬 Focus Your Search — Research Fields")
-    st.caption("Select the fields you want the pipeline to explore")
 
-    field_cols = st.columns(4)
-    selected_fields = []
-    for i, field in enumerate(RESEARCH_FIELDS):
-        with field_cols[i % 4]:
-            if st.checkbox(
-                f"{field['icon']} {field['name']}",
-                value=(i < 3),  # first 3 selected by default
-                key=f"field_{i}",
-                help=field["desc"]
-            ):
-                selected_fields.append(field["name"])
-
-    # ================================================================
-    # STEP 2: CHOOSE YOUR FOCUS — Paper Types
-    # ================================================================
-    st.markdown("#### 📄 Paper Types")
-    st.caption("What kinds of papers should the pipeline look for?")
-
-    type_cols = st.columns(4)
-    selected_paper_types = []
-    for i, ptype in enumerate(PAPER_TYPES):
-        with type_cols[i % 4]:
-            if st.checkbox(
-                f"{ptype['icon']} {ptype['name']}",
-                value=(i < 2),  # first 2 selected by default
-                key=f"ptype_{i}",
-                help=ptype["desc"]
-            ):
-                selected_paper_types.append(ptype["name"])
-
-    st.divider()
-
-    # ================================================================
-    # STEP 3: KEYWORD FOCUS — Smart Recommendations + Custom
-    # ================================================================
-    st.markdown("#### 🎯 Keyword Focus")
-    st.caption("Toggle recommended keywords and add your own")
-
-    recommended_kws = get_smart_keyword_recommendations(
-        KEYWORDS_BIBLE, st.session_state.keywords_used, n=8
+    show_choices = not st.session_state.run_started or (
+        not st.session_state.pipeline_results and not st.session_state.run_started
     )
 
-    # Render keyword chips as checkboxes in a grid
-    selected_keywords = []
-    kw_cols = st.columns(4)
-    for i, kw in enumerate(recommended_kws):
-        priority_icon = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "⚪"}.get(kw.get("priority", ""), "⚪")
-        with kw_cols[i % 4]:
-            if st.checkbox(
-                f"{priority_icon} {kw['keyword'][:35]}",
-                value=(kw.get("priority") == "HIGH"),
-                key=f"kw_sel_{i}",
-                help=f"Branch: {kw.get('branch', '')} · Priority: {kw.get('priority', '')}"
-            ):
-                selected_keywords.append(kw)
+    if show_choices:
+        # ================================================================
+        # STEP 1: CHOOSE YOUR FOCUS — Research Fields (toggle buttons)
+        # ================================================================
+        st.markdown("#### 🔬 Focus Your Search — Research Fields")
+        st.caption("Click to toggle fields on/off for the pipeline")
 
-    # Custom keyword input
-    custom_kw_text = st.text_input(
-        "➕ Extra keywords (comma-separated)",
-        placeholder="e.g., vanillin lignin, umami peptides, fermented soy",
-        help="Add any keywords you want the pipeline to search for"
-    )
+        # Initialize defaults (first 3 selected)
+        if not st.session_state.fields_initialized:
+            st.session_state.selected_fields = {f["name"] for f in RESEARCH_FIELDS[:3]}
+            st.session_state.fields_initialized = True
 
-    # Parse custom keywords into keyword entries
-    custom_entries = []
-    if custom_kw_text.strip():
-        for raw_kw in custom_kw_text.split(","):
-            kw = raw_kw.strip()
-            if kw:
-                custom_entries.append({
-                    "keyword": kw,
-                    "branch": "Custom",
-                    "priority": "MEDIUM",
-                    "added_by": st.session_state.user_name,
-                })
+        field_cols = st.columns(4)
+        for i, field in enumerate(RESEARCH_FIELDS):
+            with field_cols[i % 4]:
+                is_sel = field["name"] in st.session_state.selected_fields
+                label = f"{field['icon']} {field['name']}"
+                if is_sel:
+                    st.markdown(f'<div class="toggle-btn toggle-btn-selected-field">{label}</div>',
+                                unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="toggle-btn toggle-btn-unselected">{label}</div>',
+                                unsafe_allow_html=True)
+                if st.button("Toggle", key=f"field_toggle_{i}",
+                             help=field["desc"], use_container_width=True):
+                    if field["name"] in st.session_state.selected_fields:
+                        st.session_state.selected_fields.discard(field["name"])
+                    else:
+                        st.session_state.selected_fields.add(field["name"])
+                    st.rerun()
 
-    # Papers per keyword control
-    papers_per_kw = st.slider("Papers per keyword", 3, 15, value=5)
+        selected_fields = list(st.session_state.selected_fields)
 
-    all_keywords_to_run = selected_keywords + custom_entries
+        # ================================================================
+        # STEP 2: CHOOSE YOUR FOCUS — Paper Types (toggle buttons)
+        # ================================================================
+        st.markdown("#### 📄 Paper Types")
+        st.caption("Click to toggle paper types on/off")
 
-    st.divider()
+        if not st.session_state.ptypes_initialized:
+            st.session_state.selected_ptypes = {p["name"] for p in PAPER_TYPES[:2]}
+            st.session_state.ptypes_initialized = True
 
-    # ================================================================
-    # RUN PIPELINE
-    # ================================================================
+        type_cols = st.columns(4)
+        for i, ptype in enumerate(PAPER_TYPES):
+            with type_cols[i % 4]:
+                is_sel = ptype["name"] in st.session_state.selected_ptypes
+                label = f"{ptype['icon']} {ptype['name']}"
+                if is_sel:
+                    st.markdown(f'<div class="toggle-btn toggle-btn-selected-ptype">{label}</div>',
+                                unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="toggle-btn toggle-btn-unselected">{label}</div>',
+                                unsafe_allow_html=True)
+                if st.button("Toggle", key=f"ptype_toggle_{i}",
+                             help=ptype["desc"], use_container_width=True):
+                    if ptype["name"] in st.session_state.selected_ptypes:
+                        st.session_state.selected_ptypes.discard(ptype["name"])
+                    else:
+                        st.session_state.selected_ptypes.add(ptype["name"])
+                    st.rerun()
 
-    if not all_keywords_to_run:
-        st.warning("Select at least one keyword to run the pipeline.")
-    elif not selected_fields:
-        st.warning("Select at least one research field.")
+        selected_paper_types = list(st.session_state.selected_ptypes)
 
-    run_disabled = not all_keywords_to_run or not selected_fields
+        st.divider()
 
-    if st.button("🚀 Start Pipeline Run", type="primary", use_container_width=True, disabled=run_disabled):
-        # Reset session state for new run
-        st.session_state.pipeline_results = []
-        st.session_state.pipeline_log = []
-        st.session_state.papers_processed = 0
-        st.session_state.papers_dumped = 0
-        st.session_state.keywords_used = set()
-        st.session_state.molecules_found = {}
-        st.session_state.claims_extracted = []
-        st.session_state.review_queue = []
-        st.session_state.run_complete = False
+        # ================================================================
+        # STEP 3: KEYWORD FOCUS — Smart Recommendations + Custom
+        # ================================================================
+        st.markdown("#### 🎯 Keyword Focus")
+        st.caption("Click to toggle recommended keywords on/off, and add your own")
 
-        # Track contributor stats
-        user_email = st.session_state.user_email
-        if user_email not in st.session_state.contributor_stats:
-            st.session_state.contributor_stats[user_email] = {
-                "name": st.session_state.user_name, "keywords": 0, "flags": 0, "runs": 0,
+        recommended_kws = get_smart_keyword_recommendations(
+            KEYWORDS_BIBLE, st.session_state.keywords_used, n=8
+        )
+
+        # Initialize keyword defaults (HIGH priority selected)
+        if not st.session_state.kws_initialized:
+            st.session_state.selected_kws = {
+                kw["keyword"] for kw in recommended_kws if kw.get("priority") == "HIGH"
             }
-        st.session_state.contributor_stats[user_email]["runs"] += 1
+            st.session_state.kws_initialized = True
 
-        # Add custom keywords to the bible for future users
-        for entry in custom_entries:
-            existing_kws = [kw["keyword"].lower() for kw in KEYWORDS_BIBLE]
-            if entry["keyword"].lower() not in existing_kws:
-                full_entry = {
-                    **entry,
-                    "added_email": user_email,
-                    "added_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                }
-                KEYWORDS_BIBLE.append(full_entry)
-                save_keywords_to_file(KEYWORDS_BIBLE)
-                st.session_state.contributor_stats[user_email]["keywords"] += 1
+        kw_cols = st.columns(4)
+        for i, kw in enumerate(recommended_kws):
+            priority_icon = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "⚪"}.get(kw.get("priority", ""), "⚪")
+            with kw_cols[i % 4]:
+                is_sel = kw["keyword"] in st.session_state.selected_kws
+                label = f"{priority_icon} {kw['keyword'][:35]}"
+                if is_sel:
+                    st.markdown(f'<div class="toggle-btn toggle-btn-selected-kw">{label}</div>',
+                                unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="toggle-btn toggle-btn-unselected">{label}</div>',
+                                unsafe_allow_html=True)
+                if st.button("Toggle", key=f"kw_toggle_{i}",
+                             help=f"Branch: {kw.get('branch', '')} · Priority: {kw.get('priority', '')}",
+                             use_container_width=True):
+                    if kw["keyword"] in st.session_state.selected_kws:
+                        st.session_state.selected_kws.discard(kw["keyword"])
+                    else:
+                        st.session_state.selected_kws.add(kw["keyword"])
+                    st.rerun()
 
-        # Append field/type context to search queries for better results
-        field_terms = " ".join(f.lower().replace("-", " ") for f in selected_fields[:2])
-        type_terms = " ".join(t.lower() for t in selected_paper_types[:1])
+        # Build selected keyword entries from the set
+        selected_keywords = [kw for kw in recommended_kws if kw["keyword"] in st.session_state.selected_kws]
 
-        feed_col, stats_col = st.columns([3, 1])
+        # Custom keyword input
+        custom_kw_text = st.text_input(
+            "➕ Extra keywords (comma-separated)",
+            placeholder="e.g., vanillin lignin, umami peptides, fermented soy",
+            help="Add any keywords you want the pipeline to search for"
+        )
 
-        with stats_col:
-            st.markdown("### 📊 Live Stats")
-            stat_processed = st.empty()
-            stat_relevant = st.empty()
-            stat_dumped = st.empty()
-            stat_molecules = st.empty()
-            stat_claims = st.empty()
-            st.markdown("---")
-            st.markdown("### Relevance Levels")
-            tier_1st_ct = st.empty()
-            tier_2nd_ct = st.empty()
-            tier_3rd_ct = st.empty()
-            st.markdown("---")
-            tier_chart_slot = st.empty()
-
-        with feed_col:
-            st.markdown("### 📡 Processing Feed")
-            st.caption(
-                f"Fields: {', '.join(selected_fields)} · "
-                f"Types: {', '.join(selected_paper_types) or 'All'}"
-            )
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            feed_container = st.container()
-
-        total_work = len(all_keywords_to_run) * papers_per_kw
-        completed = 0
-        tier_counts = {"🥇 1st Level": 0, "🥈 2nd Level": 0, "🥉 3rd Level": 0}
-        kw_names_used = []
-        delay = 0.5
-
-        for kw_entry in all_keywords_to_run:
-            keyword = kw_entry["keyword"]
-            branch = kw_entry.get("branch", "Other")
-            st.session_state.keywords_used.add(keyword)
-            kw_names_used.append(keyword)
-
-            # Enhance search with field context
-            search_query = f"{keyword} {field_terms}"
-
-            with feed_container:
-                st.markdown(
-                    f"**🔍 Searching:** `{keyword}` → Branch: **{branch}**"
-                )
-
-            status_text.markdown(f"⏳ Fetching papers for: *{keyword}*...")
-            papers = fetch_openalex_papers(search_query, papers_per_kw)
-
-            if not papers:
-                with feed_container:
-                    st.warning(f"No papers found for: {keyword}")
-                completed += papers_per_kw
-                progress_bar.progress(min(completed / total_work, 1.0))
-                continue
-
-            for paper in papers:
-                completed += 1
-                progress_bar.progress(min(completed / total_work, 1.0))
-                status_text.markdown(
-                    f"🔬 Analyzing: *{paper['title'][:60]}...*"
-                )
-
-                result = mock_extraction(paper, kw_entry)
-                st.session_state.papers_processed += 1
-                st.session_state.pipeline_results.append(result)
-
-                tier = relevance_tier(result["relevance_score"])
-                tier_counts[tier] = tier_counts.get(tier, 0) + 1
-
-                if result["relevant"]:
-                    for mol in result.get("molecules", []):
-                        name = mol["name"]
-                        if name not in st.session_state.molecules_found:
-                            st.session_state.molecules_found[name] = {
-                                **mol,
-                                "discovered_at": datetime.now().isoformat(),
-                                "from_keyword": keyword,
-                            }
-
-                    for claim in result.get("claims", []):
-                        if claim not in st.session_state.claims_extracted:
-                            st.session_state.claims_extracted.append(claim)
-
-                    st.session_state.review_queue.append({
-                        "type": "source",
-                        "title": result["title"],
-                        "year": result.get("year"),
-                        "venue": result.get("venue", ""),
-                        "relevance_score": result["relevance_score"],
-                        "tier": tier,
-                        "branch": result.get("branch", ""),
-                        "molecules": result.get("molecules", []),
-                        "claims": result.get("claims", []),
-                        "url": result.get("url", ""),
-                        "keyword": keyword,
+        # Parse custom keywords into keyword entries
+        custom_entries = []
+        if custom_kw_text.strip():
+            for raw_kw in custom_kw_text.split(","):
+                kw = raw_kw.strip()
+                if kw:
+                    custom_entries.append({
+                        "keyword": kw,
+                        "branch": "Custom",
+                        "priority": "MEDIUM",
+                        "added_by": st.session_state.user_name,
                     })
 
-                    card_class = tier_css_class(tier)
+        # Papers per keyword control
+        papers_per_kw = st.slider("Papers per keyword", 3, 15, value=5)
+
+        all_keywords_to_run = selected_keywords + custom_entries
+
+        st.divider()
+
+        # ================================================================
+        # RUN PIPELINE
+        # ================================================================
+
+        if not all_keywords_to_run:
+            st.warning("Select at least one keyword to run the pipeline.")
+        elif not selected_fields:
+            st.warning("Select at least one research field.")
+
+        run_disabled = not all_keywords_to_run or not selected_fields
+
+        if st.button("🚀 Start Pipeline Run", type="primary", use_container_width=True, disabled=run_disabled):
+            # Mark run as started — hides choices
+            st.session_state.run_started = True
+            st.session_state.feedback_submitted = False
+
+            # Reset session state for new run
+            st.session_state.pipeline_results = []
+            st.session_state.pipeline_log = []
+            st.session_state.papers_processed = 0
+            st.session_state.papers_dumped = 0
+            st.session_state.keywords_used = set()
+            st.session_state.molecules_found = {}
+            st.session_state.claims_extracted = []
+            st.session_state.review_queue = []
+            st.session_state.run_complete = False
+            st.session_state.dumped_log = []
+
+            # Track contributor stats
+            user_email = st.session_state.user_email
+            if user_email not in st.session_state.contributor_stats:
+                st.session_state.contributor_stats[user_email] = {
+                    "name": st.session_state.user_name, "keywords": 0, "flags": 0, "runs": 0,
+                }
+            st.session_state.contributor_stats[user_email]["runs"] += 1
+
+            # Add custom keywords to the bible for future users
+            for entry in custom_entries:
+                existing_kws = [kw["keyword"].lower() for kw in KEYWORDS_BIBLE]
+                if entry["keyword"].lower() not in existing_kws:
+                    full_entry = {
+                        **entry,
+                        "added_email": user_email,
+                        "added_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    }
+                    KEYWORDS_BIBLE.append(full_entry)
+                    save_keywords_to_file(KEYWORDS_BIBLE)
+                    st.session_state.contributor_stats[user_email]["keywords"] += 1
+
+            # Append field/type context to search queries for better results
+            field_terms = " ".join(f.lower().replace("-", " ") for f in selected_fields[:2])
+            type_terms = " ".join(t.lower() for t in selected_paper_types[:1])
+
+            feed_col, stats_col = st.columns([3, 1])
+
+            with stats_col:
+                st.markdown("### 📊 Live Stats")
+                stat_processed = st.empty()
+                stat_relevant = st.empty()
+                stat_dumped = st.empty()
+                stat_molecules = st.empty()
+                stat_claims = st.empty()
+                st.markdown("---")
+                st.markdown("### Relevance Levels")
+                tier_1st_ct = st.empty()
+                tier_2nd_ct = st.empty()
+                tier_3rd_ct = st.empty()
+                st.markdown("---")
+                tier_chart_slot = st.empty()
+
+            with feed_col:
+                st.markdown("### 📡 Processing Feed")
+                st.caption(
+                    f"Fields: {', '.join(selected_fields)} · "
+                    f"Types: {', '.join(selected_paper_types) or 'All'}"
+                )
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                feed_container = st.container()
+
+            total_work = len(all_keywords_to_run) * papers_per_kw
+            completed = 0
+            tier_counts = {"1st Level — High Relevance": 0, "2nd Level — Mid Relevance": 0, "3rd Level — Somewhat Relevant": 0}
+            kw_names_used = []
+            delay = 0.5
+
+            for kw_entry in all_keywords_to_run:
+                keyword = kw_entry["keyword"]
+                branch = kw_entry.get("branch", "Other")
+                st.session_state.keywords_used.add(keyword)
+                kw_names_used.append(keyword)
+
+                # Enhance search with field context
+                search_query = f"{keyword} {field_terms}"
+
+                with feed_container:
+                    st.markdown(
+                        f"**🔍 Searching:** `{keyword}` → Branch: **{branch}**"
+                    )
+
+                status_text.markdown(f"⏳ Fetching papers for: *{keyword}*...")
+                papers = fetch_openalex_papers(search_query, papers_per_kw)
+
+                if not papers:
                     with feed_container:
-                        score_html = score_badge_html(result["relevance_score"])
-                        mols_html = " ".join(
-                            f'<span class="mol-chip">{m["name"]}</span>'
-                            for m in result.get("molecules", [])[:3]
-                        )
-                        claims_html = " ".join(
-                            f'<span class="claim-chip">{c[:70]}...</span>'
-                            for c in result.get("claims", [])[:2]
-                        )
-                        st.markdown(f"""
+                        st.warning(f"No papers found for: {keyword}")
+                    completed += papers_per_kw
+                    progress_bar.progress(min(completed / total_work, 1.0))
+                    continue
+
+                for paper in papers:
+                    completed += 1
+                    progress_bar.progress(min(completed / total_work, 1.0))
+                    status_text.markdown(
+                        f"🔬 Analyzing: *{paper['title'][:60]}...*"
+                    )
+
+                    result = mock_extraction(paper, kw_entry)
+                    st.session_state.papers_processed += 1
+                    st.session_state.pipeline_results.append(result)
+
+                    tier = relevance_tier(result["relevance_score"])
+                    tier_counts[tier] = tier_counts.get(tier, 0) + 1
+
+                    if result["relevant"]:
+                        for mol in result.get("molecules", []):
+                            name = mol["name"]
+                            if name not in st.session_state.molecules_found:
+                                st.session_state.molecules_found[name] = {
+                                    **mol,
+                                    "discovered_at": datetime.now().isoformat(),
+                                    "from_keyword": keyword,
+                                }
+
+                        for claim in result.get("claims", []):
+                            if claim not in st.session_state.claims_extracted:
+                                st.session_state.claims_extracted.append(claim)
+
+                        st.session_state.review_queue.append({
+                            "type": "source",
+                            "title": result["title"],
+                            "year": result.get("year"),
+                            "venue": result.get("venue", ""),
+                            "relevance_score": result["relevance_score"],
+                            "tier": tier,
+                            "branch": result.get("branch", ""),
+                            "molecules": result.get("molecules", []),
+                            "claims": result.get("claims", []),
+                            "url": result.get("url", ""),
+                            "keyword": keyword,
+                        })
+
+                        card_class = tier_css_class(tier)
+                        with feed_container:
+                            score_html = score_badge_html(result["relevance_score"])
+                            mols_html = " ".join(
+                                f'<span class="mol-chip">{m["name"]}</span>'
+                                for m in result.get("molecules", [])[:3]
+                            )
+                            claims_html = " ".join(
+                                f'<span class="claim-chip"><span class="claim-text">{c[:70]}...</span></span>'
+                                for c in result.get("claims", [])[:2]
+                            )
+                            st.markdown(f"""
 <div class="paper-card {card_class}">
   <strong>{result['title'][:80]}</strong>
   <span style="float:right">{score_html}</span>
@@ -975,124 +1071,173 @@ with tab_live:
   {mols_html}
   {('<br>' + claims_html) if claims_html else ''}
 </div>
-                        """, unsafe_allow_html=True)
-                else:
-                    st.session_state.papers_dumped += 1
-                    with feed_container:
-                        st.markdown(f"""
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.session_state.papers_dumped += 1
+                        # Log dumped article
+                        dumped_entry = {
+                            "title": result.get("title", ""),
+                            "year": result.get("year"),
+                            "score": result["relevance_score"],
+                            "keyword": keyword,
+                            "dumped_at": datetime.now().isoformat(),
+                        }
+                        st.session_state.dumped_log.append(dumped_entry)
+
+                        with feed_container:
+                            st.markdown(f"""
 <div class="paper-card dumped">
   <span style="color:#e74c3c; font-weight:600">✗ DUMPED</span> &nbsp;
   <span style="color:#c4c8d4">{result['title'][:70]}</span>
   <span style="float:right;font-size:0.85rem;color:#a0a4b0">Score: {result['relevance_score']:.0%}</span>
 </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
 
-                # Update live stats
-                total_relevant = st.session_state.papers_processed - st.session_state.papers_dumped
-                stat_processed.metric("Processed", st.session_state.papers_processed)
-                stat_relevant.metric("Relevant", total_relevant)
-                stat_dumped.metric("Dumped", st.session_state.papers_dumped)
-                stat_molecules.metric("Molecules", len(st.session_state.molecules_found))
-                stat_claims.metric("Claims", len(st.session_state.claims_extracted))
+                    # Update live stats
+                    total_relevant = st.session_state.papers_processed - st.session_state.papers_dumped
+                    stat_processed.metric("Processed", st.session_state.papers_processed)
+                    stat_relevant.metric("Relevant", total_relevant)
+                    stat_dumped.metric("Dumped", st.session_state.papers_dumped)
+                    stat_molecules.metric("Molecules", len(st.session_state.molecules_found))
+                    stat_claims.metric("Claims", len(st.session_state.claims_extracted))
 
-                tier_1st_ct.markdown(
-                    f"<span class='tier-1st'>{tier_counts.get('🥇 1st Level',0)}</span> 1st Level",
-                    unsafe_allow_html=True
-                )
-                tier_2nd_ct.markdown(
-                    f"<span class='tier-2nd'>{tier_counts.get('🥈 2nd Level',0)}</span> 2nd Level",
-                    unsafe_allow_html=True
-                )
-                tier_3rd_ct.markdown(
-                    f"<span class='tier-3rd'>{tier_counts.get('🥉 3rd Level',0)}</span> 3rd Level",
-                    unsafe_allow_html=True
-                )
+                    tier_1st_ct.markdown(
+                        f"<span class='tier-1st'>{tier_counts.get('1st Level — High Relevance',0)}</span> 1st Level",
+                        unsafe_allow_html=True
+                    )
+                    tier_2nd_ct.markdown(
+                        f"<span class='tier-2nd'>{tier_counts.get('2nd Level — Mid Relevance',0)}</span> 2nd Level",
+                        unsafe_allow_html=True
+                    )
+                    tier_3rd_ct.markdown(
+                        f"<span class='tier-3rd'>{tier_counts.get('3rd Level — Somewhat Relevant',0)}</span> 3rd Level",
+                        unsafe_allow_html=True
+                    )
 
-                tier_df = pd.DataFrame({
-                    "Tier": list(tier_counts.keys()),
-                    "Count": list(tier_counts.values()),
-                })
-                fig = px.pie(tier_df, values="Count", names="Tier",
-                             color="Tier", color_discrete_map=TIER_COLORS, hole=0.45)
-                fig.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#e0e4f0", showlegend=False,
-                    height=200, margin=dict(t=10, b=10, l=10, r=10),
-                )
-                tier_chart_slot.plotly_chart(fig, use_container_width=True)
+                    tier_df = pd.DataFrame({
+                        "Tier": list(tier_counts.keys()),
+                        "Count": list(tier_counts.values()),
+                    })
+                    fig = px.pie(tier_df, values="Count", names="Tier",
+                                 color="Tier", color_discrete_map=TIER_COLORS, hole=0.45)
+                    fig.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                        font_color="#e0e4f0", showlegend=False,
+                        height=200, margin=dict(t=10, b=10, l=10, r=10),
+                    )
+                    tier_chart_slot.plotly_chart(fig, use_container_width=True)
 
-                time.sleep(delay)
+                    time.sleep(delay)
 
-        # ---- RUN COMPLETE ----
-        status_text.markdown("✅ **Pipeline run complete!**")
-        progress_bar.progress(1.0)
+            # ---- SAVE DUMPED ARTICLES TO JSON ----
+            if st.session_state.dumped_log:
+                existing_dumped = load_dumped_articles()
+                existing_dumped.extend(st.session_state.dumped_log)
+                save_dumped_articles(existing_dumped)
 
-        st.session_state.session_history.append({
-            "date": datetime.now().strftime("%Y-%m-%d"),
-            "time": datetime.now().strftime("%H:%M"),
-            "processed": st.session_state.papers_processed,
-            "relevant": st.session_state.papers_processed - st.session_state.papers_dumped,
-            "dumped": st.session_state.papers_dumped,
-            "molecules": len(st.session_state.molecules_found),
-            "claims": len(st.session_state.claims_extracted),
-            "keywords": kw_names_used,
-            "fields": selected_fields,
-            "paper_types": selected_paper_types,
-            "user": st.session_state.user_name,
-        })
-        st.session_state.session_history = st.session_state.session_history[-5:]
+            # ---- RUN COMPLETE ----
+            status_text.markdown("✅ **Pipeline run complete!**")
+            progress_bar.progress(1.0)
 
-        total = st.session_state.papers_processed
-        relevant = total - st.session_state.papers_dumped
-        mols = len(st.session_state.molecules_found)
-        claims_ct = len(st.session_state.claims_extracted)
-        review_ct = len(st.session_state.review_queue)
+            st.session_state.session_history.append({
+                "date": datetime.now().strftime("%Y-%m-%d"),
+                "time": datetime.now().strftime("%H:%M"),
+                "processed": st.session_state.papers_processed,
+                "relevant": st.session_state.papers_processed - st.session_state.papers_dumped,
+                "dumped": st.session_state.papers_dumped,
+                "molecules": len(st.session_state.molecules_found),
+                "claims": len(st.session_state.claims_extracted),
+                "keywords": kw_names_used,
+                "fields": selected_fields,
+                "paper_types": selected_paper_types,
+                "user": st.session_state.user_name,
+            })
+            st.session_state.session_history = st.session_state.session_history[-5:]
 
-        with feed_container:
-            st.markdown(f"""
+            total = st.session_state.papers_processed
+            relevant = total - st.session_state.papers_dumped
+            mols = len(st.session_state.molecules_found)
+            claims_ct = len(st.session_state.claims_extracted)
+            review_ct = len(st.session_state.review_queue)
+
+            with feed_container:
+                st.markdown(f"""
 <div class="completion-banner">
     <h2>🎉 Pipeline Run Complete!</h2>
-    <p><strong>{total}</strong> papers &nbsp;·&nbsp;
-       <strong>{relevant}</strong> relevant &nbsp;·&nbsp;
-       <strong>{mols}</strong> molecules &nbsp;·&nbsp;
+    <p><strong>{total}</strong> papers &nbsp;&middot;&nbsp;
+       <strong>{relevant}</strong> relevant &nbsp;&middot;&nbsp;
+       <strong>{mols}</strong> molecules &nbsp;&middot;&nbsp;
        <strong>{claims_ct}</strong> claims</p>
     <p style="margin-top:10px; font-size:0.9rem;">
         <strong>{review_ct}</strong> items waiting in the <strong>Review Gate</strong> for Daniel's approval.
     </p>
 </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
-        st.balloons()
-        st.session_state.run_complete = True
+                # ---- DUMPED ARTICLES SECTION ----
+                if st.session_state.dumped_log:
+                    with st.expander(f"📦 Dumped Articles ({len(st.session_state.dumped_log)})", expanded=False):
+                        for d_idx, d_item in enumerate(st.session_state.dumped_log):
+                            dc1, dc2 = st.columns([8, 1])
+                            with dc1:
+                                st.markdown(
+                                    f"**{d_item['title'][:70]}** — "
+                                    f"Score: {d_item['score']:.0%} · "
+                                    f"Keyword: _{d_item['keyword'][:30]}_ · "
+                                    f"{d_item.get('year', 'N/A')}"
+                                )
+                            with dc2:
+                                if st.button("🔄", key=f"rescue_run_{d_idx}", help="Rescue — move to review queue"):
+                                    rescued = st.session_state.dumped_log.pop(d_idx)
+                                    st.session_state.review_queue.append({
+                                        "type": "source",
+                                        "title": rescued["title"],
+                                        "year": rescued.get("year"),
+                                        "venue": "",
+                                        "relevance_score": rescued["score"],
+                                        "tier": relevance_tier(rescued["score"]),
+                                        "branch": "",
+                                        "molecules": [],
+                                        "claims": [],
+                                        "url": "",
+                                        "keyword": rescued["keyword"],
+                                    })
+                                    st.success(f"Rescued! Moved to Review Gate.")
+                                    st.rerun()
 
-        # ---- POST-RUN FEEDBACK ----
-        with feed_container:
-            st.markdown("---")
-            st.markdown("#### 💬 How was this run?")
-            with st.form("run_feedback", clear_on_submit=True):
-                fb_rating = st.select_slider(
-                    "Was this run useful?",
-                    options=["Not useful", "Somewhat", "Useful", "Very useful", "Excellent"],
-                    value="Useful"
-                )
-                fb_learned = st.text_area(
-                    "What did you learn or notice?",
-                    placeholder="e.g., Found interesting papers on thiamine degradation, "
-                                "the Maillard keywords gave the best results...",
-                    height=80,
-                )
-                fb_submit = st.form_submit_button("📨 Submit Feedback")
-                if fb_submit:
-                    st.session_state.run_feedback.append({
-                        "user": st.session_state.user_name,
-                        "email": st.session_state.user_email,
-                        "rating": fb_rating,
-                        "learned": fb_learned,
-                        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                        "papers_processed": total,
-                        "keywords": kw_names_used,
-                    })
-                    st.success("Thanks for the feedback! Daniel will see this.")
+            st.balloons()
+            st.session_state.run_complete = True
+
+            # ---- POST-RUN FEEDBACK ----
+            with feed_container:
+                st.markdown("---")
+                st.markdown("#### 💬 How was this run?")
+                with st.form("run_feedback", clear_on_submit=True):
+                    fb_rating = st.select_slider(
+                        "Was this run useful?",
+                        options=["Not useful", "Somewhat", "Useful", "Very useful", "Excellent"],
+                        value="Useful"
+                    )
+                    fb_learned = st.text_area(
+                        "What did you learn or notice?",
+                        placeholder="e.g., Found interesting papers on thiamine degradation, "
+                                    "the Maillard keywords gave the best results...",
+                        height=80,
+                    )
+                    fb_submit = st.form_submit_button("📨 Submit Feedback")
+                    if fb_submit:
+                        st.session_state.run_feedback.append({
+                            "user": st.session_state.user_name,
+                            "email": st.session_state.user_email,
+                            "rating": fb_rating,
+                            "learned": fb_learned,
+                            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                            "papers_processed": total,
+                            "keywords": kw_names_used,
+                        })
+                        st.session_state.feedback_submitted = True
+                        st.session_state.run_started = False
+                        st.success("Thanks for the feedback! Daniel will see this.")
 
     # Show previous results if any (after rerun)
     elif st.session_state.pipeline_results:
@@ -1107,6 +1252,11 @@ with tab_live:
         r3.metric("Dumped", len(dumped_results))
         r4.metric("Acceptance Rate", f"{len(relevant_results)/max(len(results),1):.0%}")
 
+        # Progress bar through feed
+        total_to_show = len(relevant_results[:20])
+        if total_to_show > 0:
+            review_progress = st.progress(0)
+
         for idx, r in enumerate(relevant_results[:20]):
             tier = relevance_tier(r["relevance_score"])
             card_class = tier_css_class(tier)
@@ -1114,32 +1264,76 @@ with tab_live:
                 f'<span class="mol-chip">{m["name"]}</span>'
                 for m in r.get("molecules", [])[:3]
             )
-            st.markdown(f"""
+
+            # 2-column layout: card content (col 9) + flag button (col 1)
+            card_col, flag_col = st.columns([9, 1])
+
+            with card_col:
+                st.markdown(f"""
 <div class="paper-card {card_class}">
   <strong>{r['title'][:80]}</strong>
   {score_badge_html(r['relevance_score'])} &nbsp; {tier} · {r.get('branch','')}<br>
   <div class="meta-line">{r.get('year','')} · {r.get('venue','')[:40]}</div>
   {mols_html}
 </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
-            # Flag for Review button
-            if st.button(f"🚩 Flag for Daniel", key=f"flag_result_{idx}"):
-                st.session_state.flagged_items.append({
-                    **r,
-                    "flagged_by": st.session_state.user_name,
-                    "flagged_email": st.session_state.user_email,
-                    "flagged_at": datetime.now().isoformat(),
-                    "flag_reason": "Interesting finding",
-                })
-                # Update contributor stats
-                ue = st.session_state.user_email
-                if ue not in st.session_state.contributor_stats:
-                    st.session_state.contributor_stats[ue] = {
-                        "name": st.session_state.user_name, "keywords": 0, "flags": 0, "runs": 0,
-                    }
-                st.session_state.contributor_stats[ue]["flags"] += 1
-                st.success(f"🚩 Flagged! Daniel will see this in the Review Gate.")
+            with flag_col:
+                if st.button("🚩", key=f"flag_result_{idx}", help="Flag for Daniel"):
+                    st.session_state.flagged_items.append({
+                        **r,
+                        "flagged_by": st.session_state.user_name,
+                        "flagged_email": st.session_state.user_email,
+                        "flagged_at": datetime.now().isoformat(),
+                        "flag_reason": "Interesting finding",
+                    })
+                    ue = st.session_state.user_email
+                    if ue not in st.session_state.contributor_stats:
+                        st.session_state.contributor_stats[ue] = {
+                            "name": st.session_state.user_name, "keywords": 0, "flags": 0, "runs": 0,
+                        }
+                    st.session_state.contributor_stats[ue]["flags"] += 1
+                    st.success(f"🚩 Flagged! Daniel will see this in the Review Gate.")
+
+            # Update progress bar
+            if total_to_show > 0:
+                progress_val = (idx + 1) / total_to_show
+                review_progress.progress(progress_val)
+
+        if total_to_show > 0:
+            remaining = total_to_show - total_to_show  # all shown
+            st.markdown(f"📊 **{total_to_show} of {len(relevant_results)} papers reviewed** — scroll down to submit feedback")
+
+        # Dumped articles section for post-run view
+        if st.session_state.dumped_log:
+            with st.expander(f"📦 Dumped Articles ({len(st.session_state.dumped_log)})", expanded=False):
+                for d_idx2, d_item in enumerate(st.session_state.dumped_log):
+                    dc1, dc2 = st.columns([8, 1])
+                    with dc1:
+                        st.markdown(
+                            f"**{d_item['title'][:70]}** — "
+                            f"Score: {d_item['score']:.0%} · "
+                            f"Keyword: _{d_item['keyword'][:30]}_ · "
+                            f"{d_item.get('year', 'N/A')}"
+                        )
+                    with dc2:
+                        if st.button("🔄", key=f"rescue_post_{d_idx2}", help="Rescue — move to review queue"):
+                            rescued = st.session_state.dumped_log.pop(d_idx2)
+                            st.session_state.review_queue.append({
+                                "type": "source",
+                                "title": rescued["title"],
+                                "year": rescued.get("year"),
+                                "venue": "",
+                                "relevance_score": rescued["score"],
+                                "tier": relevance_tier(rescued["score"]),
+                                "branch": "",
+                                "molecules": [],
+                                "claims": [],
+                                "url": "",
+                                "keyword": rescued["keyword"],
+                            })
+                            st.success(f"Rescued! Moved to Review Gate.")
+                            st.rerun()
 
     else:
         st.markdown("""
@@ -1148,7 +1342,7 @@ with tab_live:
         2. **Select keywords** — toggle recommended keywords or add your own
         3. Click **Start Pipeline Run**
         4. Papers are fetched from OpenAlex and analyzed for relevance
-        5. Results are classified: 🥇 **1st Level** · 🥈 **2nd Level** · 🥉 **3rd Level**
+        5. Results are classified: **1st Level** (High Relevance) · **2nd Level** (Mid Relevance) · **3rd Level** (Somewhat Relevant)
         6. Relevant items go to the **Review Gate** for approval before reaching Airtable
         7. Your custom keywords are saved for future users
 
@@ -1163,26 +1357,39 @@ with tab_live:
 with tab_review:
     st.header("✅ Review Gate — Daniel's Approval")
     st.caption(
-        "This is the bridge between pipeline discoveries and Airtable. "
-        "Only items you approve here will be pushed to the Airtable database."
+        "Items scoring 70%+ are auto-approved. "
+        "Only items below 70% relevance appear here for manual review. "
+        "Approved items can then be pushed to Airtable."
     )
 
     queue = st.session_state.review_queue
+
+    # Auto-approve items with score >= 0.70 and filter queue to < 0.70
+    auto_approved = [item for item in queue if item.get("relevance_score", 0) >= 0.70]
+    manual_queue = [item for item in queue if item.get("relevance_score", 0) < 0.70]
+
+    if auto_approved:
+        st.session_state.approved_items.extend(auto_approved)
+        st.session_state.review_queue = manual_queue
+        queue = manual_queue
 
     if not queue and not st.session_state.approved_items:
         st.info("No items to review. Run the pipeline first to populate the queue.")
     else:
         # Summary metrics
         q1, q2, q3 = st.columns(3)
-        q1.metric("⏳ Pending Review", len(queue))
+        q1.metric("⏳ Pending Review (< 70%)", len(queue))
         q2.metric("✅ Approved", len(st.session_state.approved_items))
         q3.metric("❌ Rejected", len(st.session_state.rejected_items))
+
+        if auto_approved:
+            st.success(f"Auto-approved {len(auto_approved)} items scoring 70%+ relevance.")
 
         st.divider()
 
         # Batch actions
         if queue:
-            st.markdown("#### Pending Items")
+            st.markdown("#### Pending Items (Below 70% Relevance)")
             batch_col1, batch_col2, batch_col3 = st.columns([1, 1, 2])
             with batch_col1:
                 if st.button("✅ Approve All", type="primary"):
@@ -1199,14 +1406,14 @@ with tab_review:
 
             # Individual items
             for idx, item in enumerate(queue):
-                tier = item.get("tier", "🥉 3rd Level")
+                tier = item.get("tier", "3rd Level — Somewhat Relevant")
                 card_class = tier_css_class(tier)
                 mols_html = " ".join(
                     f'<span class="mol-chip">{m["name"]}</span>'
                     for m in item.get("molecules", [])[:4]
                 )
                 claims_html = " ".join(
-                    f'<span class="claim-chip">{c[:60]}...</span>'
+                    f'<span class="claim-chip"><span class="claim-text">{c[:60]}...</span></span>'
                     for c in item.get("claims", [])[:2]
                 )
 
@@ -1280,8 +1487,8 @@ with tab_review:
 with tab_sources:
     st.header("📚 Sources — Relevance Filtration")
     st.caption(
-        "3-tier classification: **🥇 1st Level** (≥80%) · "
-        "**🥈 2nd Level** (60–80%) · **🥉 3rd Level** (<60%)"
+        "3-tier classification: **1st Level** (High Relevance, ≥80%) · "
+        "**2nd Level** (Mid Relevance, 60-80%) · **3rd Level** (Somewhat Relevant, <60%)"
     )
 
     all_sources = []
@@ -1323,8 +1530,8 @@ with tab_sources:
         with fc1:
             tier_filter = st.multiselect(
                 "Filter by Relevance Level",
-                ["🥇 1st Level", "🥈 2nd Level", "🥉 3rd Level"],
-                default=["🥇 1st Level", "🥈 2nd Level", "🥉 3rd Level"],
+                ["1st Level — High Relevance", "2nd Level — Mid Relevance", "3rd Level — Somewhat Relevant"],
+                default=["1st Level — High Relevance", "2nd Level — Mid Relevance", "3rd Level — Somewhat Relevant"],
             )
         with fc2:
             source_filter = st.multiselect(
@@ -1337,9 +1544,9 @@ with tab_sources:
 
         s1, s2, s3, s4 = st.columns(4)
         s1.metric("Total Sources", len(filtered))
-        ct_1st = len(filtered[filtered["tier"] == "🥇 1st Level"])
-        ct_2nd = len(filtered[filtered["tier"] == "🥈 2nd Level"])
-        ct_3rd = len(filtered[filtered["tier"] == "🥉 3rd Level"])
+        ct_1st = len(filtered[filtered["tier"] == "1st Level — High Relevance"])
+        ct_2nd = len(filtered[filtered["tier"] == "2nd Level — Mid Relevance"])
+        ct_3rd = len(filtered[filtered["tier"] == "3rd Level — Somewhat Relevant"])
         s2.markdown(f"<span class='tier-1st'>{ct_1st}</span> 1st Level", unsafe_allow_html=True)
         s3.markdown(f"<span class='tier-2nd'>{ct_2nd}</span> 2nd Level", unsafe_allow_html=True)
         s4.markdown(f"<span class='tier-3rd'>{ct_3rd}</span> 3rd Level", unsafe_allow_html=True)
@@ -1408,7 +1615,6 @@ with tab_molecules:
                     by_primary[cat] = []
                 by_primary[cat].append(mol)
 
-            # Display in hierarchy order: broad categories first
             cat_icons = {
                 "Amino Acids": "🧬", "Fats": "🫧", "Sugars": "🍬",
                 "Proteins": "🥩", "Alcohols": "🧪",
@@ -1439,9 +1645,9 @@ with tab_molecules:
   <strong style="color:#7ee8b0">{mol['name']}</strong>{subtype_text}
   <span style="color:#c4c8d4; font-size:0.85rem;">{sensory_text}</span>
   <div style="color:#a0a4b0; font-size:0.8rem; margin-top:3px;">
-    Role: <strong style="color:#c4c8d4">{role}</strong> &nbsp;·&nbsp;
+    Role: <strong style="color:#c4c8d4">{role}</strong> &nbsp;&middot;&nbsp;
     Confidence: <strong style="color:#c4c8d4">{conf:.0%}</strong>
-    {f' &nbsp;·&nbsp; From: <em>{kw[:30]}</em>' if kw else ''}
+    {f' &nbsp;&middot;&nbsp; From: <em>{kw[:30]}</em>' if kw else ''}
   </div>
 </div>
                     """, unsafe_allow_html=True)
@@ -1489,8 +1695,8 @@ with tab_claims:
         for i, claim in enumerate(claims):
             st.markdown(f"""
 <div class="claim-chip" style="display:block; margin-bottom:8px;">
-  <strong style="color:#a9c4f5">Claim {i+1}:</strong>
-  <span style="color:#e0e4f0">{claim}</span>
+  <strong style="color:#93bbfc">Claim {i+1}:</strong>
+  <span class="claim-text" style="color:#e8edf5">{claim}</span>
 </div>
             """, unsafe_allow_html=True)
 
@@ -1618,7 +1824,7 @@ with tab_community:
     )
 
     # ---- LEADERBOARD ----
-    st.markdown("#### 🥇 Contributor Leaderboard")
+    st.markdown("#### Contributor Leaderboard")
 
     stats = st.session_state.contributor_stats
     if not stats:
@@ -1637,19 +1843,19 @@ with tab_community:
             })
         leaderboard.sort(key=lambda x: -x["score"])
 
-        medals = ["🥇", "🥈", "🥉"]
+        position_labels = ["#1", "#2", "#3"]
         for i, entry in enumerate(leaderboard[:10]):
-            medal = medals[i] if i < 3 else f"#{i+1}"
+            pos_label = position_labels[i] if i < 3 else f"#{i+1}"
             st.markdown(f"""
 <div class="session-card" style="display:flex; align-items:center; justify-content:space-between;">
   <div>
-    <span style="font-size:1.4rem">{medal}</span> &nbsp;
+    <span style="font-size:1.4rem">{pos_label}</span> &nbsp;
     <strong style="color:#f0f2f6; font-size:1.1rem">{entry['name']}</strong>
   </div>
   <div style="text-align:right; color:#c4c8d4; font-size:0.85rem;">
-    🚀 {entry['runs']} runs &nbsp;·&nbsp;
-    🚩 {entry['flags']} flags &nbsp;·&nbsp;
-    🔑 {entry['keywords']} keywords &nbsp;·&nbsp;
+    🚀 {entry['runs']} runs &nbsp;&middot;&nbsp;
+    🚩 {entry['flags']} flags &nbsp;&middot;&nbsp;
+    🔑 {entry['keywords']} keywords &nbsp;&middot;&nbsp;
     <strong style="color:#f39c12">Score: {entry['score']}</strong>
   </div>
 </div>
@@ -1672,7 +1878,7 @@ with tab_community:
   🚩 <strong>{item.get('title','')[:80]}</strong>
   {score_badge_html(item.get('relevance_score'))} &nbsp; {tier}
   <div class="review-meta">
-    Flagged by <strong>{item.get('flagged_by','')}</strong> ·
+    Flagged by <strong>{item.get('flagged_by','')}</strong> &middot;
     {item.get('flagged_at','')[:16]}
   </div>
 </div>
@@ -1701,7 +1907,7 @@ with tab_community:
   </div>
   <div style="color:#c4c8d4; margin-top:6px;">{fb.get('learned','')}</div>
   <div style="color:#8b92a8; font-size:0.75rem; margin-top:4px;">
-    {fb.get('date','')} · {fb.get('papers_processed',0)} papers ·
+    {fb.get('date','')} &middot; {fb.get('papers_processed',0)} papers &middot;
     Keywords: {', '.join(fb.get('keywords',[])[:3])}
   </div>
 </div>
