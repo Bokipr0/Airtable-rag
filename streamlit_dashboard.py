@@ -191,6 +191,20 @@ st.markdown("""
     .toggle-btn-selected-kw {
         border: 3px solid #6c46b4; background: rgba(100,70,180,0.08); color: #1a1a2e;
     }
+
+    /* Override Streamlit primary button — softer, not eye-burning */
+    div[data-testid="stButton"] button[kind="primary"] {
+        background-color: #2563a8 !important;
+        border-color: #2563a8 !important;
+    }
+    div[data-testid="stButton"] button[kind="primary"]:hover {
+        background-color: #1d4f8a !important;
+        border-color: #1d4f8a !important;
+    }
+    div[data-testid="stButton"] button[kind="secondary"] {
+        border: 2px solid #ccc !important;
+        color: #333 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -679,6 +693,10 @@ with st.sidebar:
         sources_raw = []
         molecules_raw = []
 
+    if AT_TOKEN and AT_BASE_ID:
+        st.link_button("📊 Open Airtable Database",
+                        "https://airtable.com/appcS9K0FZK2DIPbZ",
+                        use_container_width=True)
     st.divider()
 
     st.markdown("**This Session**")
@@ -742,24 +760,19 @@ with tab_live:
 
     # ---- SESSION HISTORY ----
     if st.session_state.session_history:
-        st.markdown("#### 📂 Previous Runs")
-        hist_cols = st.columns(min(len(st.session_state.session_history), 5))
-        for i, sess in enumerate(st.session_state.session_history[-5:]):
-            with hist_cols[i % len(hist_cols)]:
-                with st.expander(f"🕐 {sess['time']}", expanded=False):
-                    st.markdown(f"""
-<div class="session-card">
-    <div class="session-date">{sess['date']}</div>
-    <div><span class="session-stat">{sess['processed']}</span> processed</div>
-    <div><span class="session-stat">{sess['relevant']}</span> relevant</div>
-    <div><span class="session-stat">{sess['dumped']}</span> dumped</div>
-    <div><span class="session-stat">{sess['molecules']}</span> molecules</div>
-    <div><span class="session-stat">{sess['claims']}</span> claims</div>
-    <div style="margin-top:6px; color:#555; font-size:0.8rem;">
-        Keywords: {', '.join(sess.get('keywords', [])[:3])}{'...' if len(sess.get('keywords', [])) > 3 else ''}
-    </div>
-</div>
-                    """, unsafe_allow_html=True)
+        with st.expander("📋 Recent Runs", expanded=False):
+            for sess in reversed(st.session_state.session_history[-5:]):
+                kw_text = ', '.join(sess.get('keywords', [])[:3])
+                st.markdown(
+                    f"**{sess['date']}** — "
+                    f"{sess['processed']} processed · "
+                    f"{sess['relevant']} relevant · "
+                    f"{sess['dumped']} dumped · "
+                    f"{sess['molecules']} molecules · "
+                    f"{sess['claims']} claims"
+                )
+                if kw_text:
+                    st.caption(f"Keywords: {kw_text}")
         st.divider()
 
     # ================================================================
@@ -1058,8 +1071,9 @@ with tab_live:
                             st.markdown(f"""
 <div class="paper-card {card_class}">
   <strong>{result['title'][:80]}</strong>
-  <span style="float:right">{score_html}</span>
-  <div class="meta-line">{result.get('year','')} · {result.get('venue','')[:40]} · {tier} · {branch}</div>
+  {f'<a href="{result.get("url","")}" target="_blank" style="float:right;font-size:0.85rem;text-decoration:none;">🔗</a>' if result.get('url') else ''}
+  <span style="float:right;margin-right:8px">{score_html}</span>
+  <div class="meta-line">{result.get('authors','')[:60]} · {result.get('year','')} · {result.get('venue','')[:40]} · {tier}</div>
   {mols_html}
   {('<br>' + claims_html) if claims_html else ''}
 </div>
@@ -1082,6 +1096,7 @@ with tab_live:
   <span style="color:#e74c3c; font-weight:600">✗ DUMPED</span> &nbsp;
   <span style="color:#555">{result['title'][:70]}</span>
   <span style="float:right;font-size:0.85rem;color:#666">Score: {result['relevance_score']:.0%}</span>
+  <div class="meta-line">{result.get('authors','')[:60]}</div>
 </div>
                             """, unsafe_allow_html=True)
 
@@ -1264,8 +1279,9 @@ with tab_live:
                 st.markdown(f"""
 <div class="paper-card {card_class}">
   <strong>{r['title'][:80]}</strong>
-  {score_badge_html(r['relevance_score'])} &nbsp; {tier} · {r.get('branch','')}<br>
-  <div class="meta-line">{r.get('year','')} · {r.get('venue','')[:40]}</div>
+  {f'<a href="{r.get("url","")}" target="_blank" style="float:right;font-size:0.85rem;text-decoration:none;">🔗</a>' if r.get('url') else ''}
+  {score_badge_html(r['relevance_score'])} &nbsp; {tier}<br>
+  <div class="meta-line">{r.get('authors','')[:60]} · {r.get('year','')} · {r.get('venue','')[:40]}</div>
   {mols_html}
 </div>
                 """, unsafe_allow_html=True)
@@ -1285,7 +1301,7 @@ with tab_live:
                             "name": st.session_state.user_name, "keywords": 0, "flags": 0, "runs": 0,
                         }
                     st.session_state.contributor_stats[ue]["flags"] += 1
-                    st.success(f"🚩 Flagged! Daniel will see this in the Review Gate.")
+                    st.success("🚩 Flagged!")
 
             # Update progress bar
             if total_to_show > 0:
@@ -1491,8 +1507,9 @@ with tab_review:
                 st.markdown(f"""
 <div class="review-card" style="border-left: 4px solid {TIER_COLORS.get(tier, '#555')};">
   <strong>{item['title'][:90]}</strong>
+  {f'<a href="{item.get("url","")}" target="_blank" style="float:right;font-size:0.85rem;text-decoration:none;">🔗</a>' if item.get('url') else ''}
   {score_badge_html(item.get('relevance_score'))} &nbsp; {tier}
-  <div class="review-meta">{item.get('year','')} · {item.get('venue','')[:40]} · Branch: {item.get('branch','')}</div>
+  <div class="review-meta">{item.get('authors','')[:60]} · {item.get('year','')} · {item.get('venue','')[:40]}</div>
   <div style="margin-top:6px">{mols_html}</div>
   <div style="margin-top:4px">{claims_html}</div>
 </div>
@@ -1735,24 +1752,6 @@ with tab_molecules:
             st.markdown("### 📦 In Airtable Database")
             st.metric("Total in Airtable", len(molecules_raw))
 
-            # Group by type if available
-            at_by_type = {}
-            for rec in molecules_raw:
-                f = rec.get("fields", {})
-                t = f.get("type", "other") or "other"
-                if t not in at_by_type:
-                    at_by_type[t] = 0
-                at_by_type[t] += 1
-
-            if at_by_type:
-                type_df = pd.DataFrame([
-                    {"Category": k, "Count": v} for k, v in sorted(at_by_type.items(), key=lambda x: -x[1])
-                ])
-                fig = px.bar(type_df, x="Category", y="Count", color="Category")
-                fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                  font_color="#1a1a2e", showlegend=False, height=250)
-                st.plotly_chart(fig, use_container_width=True)
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 5 — CLAIMS FEED
@@ -1764,11 +1763,9 @@ with tab_claims:
 
     claims = st.session_state.claims_extracted
 
-    if not claims:
-        st.info("No claims extracted yet. Run the pipeline to extract scientific claims from papers.")
-    else:
-        st.metric("Total Claims", len(claims))
-
+    if claims:
+        st.markdown("### 🆕 This Session")
+        st.metric("Claims This Run", len(claims))
         for i, claim in enumerate(claims):
             st.markdown(f"""
 <div class="claim-chip" style="display:block; margin-bottom:8px;">
@@ -1776,6 +1773,38 @@ with tab_claims:
   <span class="claim-text" style="color:#1a1a2e">{claim}</span>
 </div>
             """, unsafe_allow_html=True)
+
+    # Show previous claims from Airtable
+    if AT_TOKEN and AT_BASE_ID:
+        try:
+            r = requests.get(f"{AT_BASE}/{quote('Claims')}",
+                             headers=AT_HEADERS, params={"maxRecords": 50}, timeout=10)
+            if r.ok:
+                at_claims = r.json().get("records", [])
+                if at_claims:
+                    st.divider()
+                    st.markdown("### 📦 Previous Claims (from Airtable)")
+                    st.metric("Claims in Database", len(at_claims))
+                    for j, rec in enumerate(at_claims):
+                        f = rec.get("fields", {})
+                        claim_text = f.get("claim_text", "")
+                        stance = f.get("stance", "")
+                        conf = f.get("confidence", "")
+                        stance_color = {"supports": "#1a8a4a", "contradicts": "#c0392b", "neutral": "#666"}.get(
+                            str(stance).lower(), "#666")
+                        conf_text = f" · Confidence: {conf}" if conf else ""
+                        st.markdown(f"""
+<div class="claim-chip" style="display:block; margin-bottom:8px;">
+  <strong style="color:#1a5096">{j+1}.</strong>
+  <span class="claim-text" style="color:#1a1a2e">{claim_text[:200]}</span>
+  <span style="color:{stance_color}; font-size:0.8rem; font-weight:600"> {stance}{conf_text}</span>
+</div>
+                        """, unsafe_allow_html=True)
+        except Exception:
+            pass
+
+    if not claims and not (AT_TOKEN and AT_BASE_ID):
+        st.info("No claims extracted yet. Run the pipeline to extract scientific claims from papers.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
